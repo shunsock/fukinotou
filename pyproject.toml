@@ -1,0 +1,14 @@
+[project]
+name = "fukinotou"
+version = "0.1.0"
+description = "A simple Data Loader for Python"
+readme = "README.md"
+authors = [
+    { name = "shunsock", email = "s.tsuchiya.business@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
