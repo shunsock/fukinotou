@@ -1,0 +1,37 @@
+version: '3'
+
+tasks:
+  install:
+    desc: Install package in development mode
+    cmds:
+      - uv pip install -e .
+
+  install-dev:
+    desc: Install development dependencies
+    cmds:
+      - uv pip install -e ".[dev]"
+
+  lint:
+    desc: Run linters
+    cmds:
+      - uv run ruff check .
+
+  format:
+    desc: Format code
+    cmds:
+      - uv run ruff format .
+
+  typecheck:
+    desc: Run type checking
+    cmds:
+      - uv run mypy --strict src/
+
+  test:
+    desc: Run tests
+    cmds:
+      - uv run pytest tests/
+
+  test-one:
+    desc: Run a single test
+    cmds:
+      - uv run pytest {{.CLI_ARGS}} -v

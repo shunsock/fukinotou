@@ -3,14 +3,13 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Build/Test/Lint Commands
-- Install: `uv pip install -e .`
-- Install dev dependencies: `uv pip install -e ".[dev]"`
-- Run lints `ruff check .`
-- Run formatting `ruff format .`
-- Run type checking: `mypy --strict src/`
-- Run tests: `pytest tests/`
-- Run single test: `pytest tests/test_file.py::test_function_name -v`
-- Run tests with coverage: `pytest tests/ --cov=src/fukinotou/`
+- Install: `task install`
+- Install dev dependencies: `task install-dev`
+- Run lints: `task lint`
+- Run formatting: `task format`
+- Run type checking: `task typecheck`
+- Run tests: `task test`
+- Run single test: `task test-one -- tests/test_file.py::test_function_name`
 
 ## Code Style Guidelines
 - **Type Annotations**: Required for all code (enforced with mypy and py.typed)
