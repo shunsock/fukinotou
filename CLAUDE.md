@@ -8,8 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Run lints `ruff check .`
 - Run formatting `ruff format .`
 - Run type checking: `mypy --strict src/`
-- Run tests (when added): `pytest tests/`
-- Run single test: `pytest tests/path_to_test.py::test_function_name`
+- Run tests: `pytest tests/`
+- Run single test: `pytest tests/test_file.py::test_function_name -v`
+- Run tests with coverage: `pytest tests/ --cov=src/fukinotou/`
 
 ## Code Style Guidelines
 - **Type Annotations**: Required for all code (enforced with mypy and py.typed)
