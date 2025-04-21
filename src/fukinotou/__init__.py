@@ -4,5 +4,20 @@ from fukinotou.text_file_loader import (
     TextFilesLoadResult,
     TextFilesLoader,
 )
+from fukinotou.json_loader import (
+    JsonLoadResult,
+    JsonLoader,
+    JsonsLoadResult,
+    JsonsLoader,
+)
 
-__all__ = ["TextFileLoader"]
+__all__ = [
+    "JsonLoader",
+    "JsonLoadResult",
+    "JsonsLoadResult",
+    "JsonsLoader",
+    "TextFileLoadResult",
+    "TextFileLoader",
+    "TextFilesLoadResult",
+    "TextFilesLoader",
+]
