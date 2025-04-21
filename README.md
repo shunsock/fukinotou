@@ -54,7 +54,7 @@ This project uses [Task](https://taskfile.dev/) for managing development tasks. 
 
 ### Coding Style
 - **Type Annotations**: Always use type annotations. Use `typeguard` for 3rd party tools without types.
-- **Docstrings**: Japanese docstrings for all classes and methods. Describe what the code does, not how. docstrings style must be Google style.
+- **Docstrings**: docstrings for all classes and methods in English. Describe what the code does, not how. docstrings style must be Google style.
 - **Classes**: Each class has a single responsibility. Public methods have tests.
 - **Testing**: Use AAA pattern (Arrange-Act-Assert). Avoid mocks when possible. Clean up test objects.
 - **Imports**: Standard library first, third-party second, local modules last.

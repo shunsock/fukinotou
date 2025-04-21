@@ -57,14 +57,14 @@ class PathSearcher:
         path: Path, extensions: List[str]
     ) -> List[Path]:
         """
-        複数の特定の拡張子を持つファイルパスを検索する
+        Search for files with multiple specific extensions in a directory and its subdirectories.
 
         Args:
-            path: 検索するディレクトリパス
-            extensions: 検索する拡張子のリスト (例: [".txt", ".png", ".pdf"])
+            path: The directory path to search
+            extensions: List of file extensions to search for (e.g., [".txt", ".png", ".pdf"])
 
         Returns:
-            指定された拡張子を持つファイルのPathオブジェクトのリスト
+            A list of Path objects for files with any of the specified extensions
         """
         all_files = PathSearcher.search_file_paths_from_directory_path(path)
 
