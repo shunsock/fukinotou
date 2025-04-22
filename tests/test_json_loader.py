@@ -4,6 +4,8 @@ import tempfile
 from pathlib import Path
 
 import pytest
+import polars
+import pandas
 from pydantic import BaseModel, Field
 
 from fukinotou.json_loader import (
@@ -234,3 +236,103 @@ class TestJsonsLoader:
 
             # Make sure XML file was not loaded
             assert "non_json.xml" not in loaded_files
+
+    def test_jsons_load_result_to_polars(self) -> None:
+        """
+        Test that JsonsLoadResult.to_polars() correctly converts model instances to a Polars DataFrame.
+
+        This test verifies that the to_polars method correctly extracts data from multiple model instances
+        and creates a Polars DataFrame with the expected structure and content.
+
+        Expected: Polars DataFrame with rows matching the model instances
+        """
+        # Arrange
+        with tempfile.TemporaryDirectory() as temp_dir:
+            dir_path = Path(temp_dir)
+
+            # Create test files
+            file_contents = {
+                "file1.json": {"id": 1, "name": "Item 1"},
+                "file2.json": {"id": 2, "name": "Item 2"},
+                "file3.json": {"id": 3, "name": "Item 3"},
+            }
+
+            for filename, content in file_contents.items():
+                file_path = dir_path / filename
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(content, f)
+
+            # Act
+            loader = JsonsLoader(dir_path, _TestModel)
+            result = loader.load()
+
+            # Then convert to DataFrames
+            df = result.to_polars()
+            df_with_path = result.to_polars(include_path_as_column=True)
+
+            # Assert
+            assert isinstance(df, polars.DataFrame)
+            assert len(df) == 3  # Should have 3 rows
+
+            # Check column names
+            assert "id" in df.columns
+            assert "name" in df.columns
+            assert "path" not in df.columns
+
+            # Check values
+            ids = df.select("id").to_series().to_list()
+            assert sorted(ids) == [1, 2, 3]
+
+            # Check with path column
+            assert "path" in df_with_path.columns
+            assert len(df_with_path.select("path").unique()) == 3  # 3 unique file paths
+
+    def test_jsons_load_result_to_pandas(self) -> None:
+        """
+        Test that JsonsLoadResult.to_pandas() correctly converts model instances to a Pandas DataFrame.
+
+        This test verifies that the to_pandas method correctly extracts data from multiple model instances
+        and creates a Pandas DataFrame with the expected structure and content.
+
+        Expected: Pandas DataFrame with rows matching the model instances
+        """
+        # Arrange
+        with tempfile.TemporaryDirectory() as temp_dir:
+            dir_path = Path(temp_dir)
+
+            # Create test files
+            file_contents = {
+                "file1.json": {"id": 1, "name": "Item 1"},
+                "file2.json": {"id": 2, "name": "Item 2"},
+                "file3.json": {"id": 3, "name": "Item 3"},
+            }
+
+            for filename, content in file_contents.items():
+                file_path = dir_path / filename
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(content, f)
+
+            # Act
+            loader = JsonsLoader(dir_path, _TestModel)
+            result = loader.load()
+
+            # Then convert to DataFrames
+            df = result.to_pandas()
+            df_with_path = result.to_pandas(include_path_as_column=True)
+
+            # Assert
+            assert isinstance(df, pandas.DataFrame)
+            assert len(df) == 3  # Should have 3 rows
+
+            # Check column names
+            assert "id" in df.columns
+            assert "name" in df.columns
+            assert "path" not in df.columns
+
+            # Check values
+            ids = df["id"].tolist()
+            assert sorted(ids) == [1, 2, 3]
+
+            # Check with path column
+            assert "path" in df_with_path.columns
+            assert len(df_with_path["path"].unique()) == 3  # 3 unique file paths

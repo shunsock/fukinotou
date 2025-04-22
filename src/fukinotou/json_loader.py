@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import List, Type, TypeVar, Generic
 
 import json
+import pandas
+import polars
 from pydantic import BaseModel
 
 from .path_handler.path_searcher import PathSearcher
@@ -46,6 +48,58 @@ class JsonsLoadResult(BaseModel, Generic[T]):
 
     directory_path: Path
     value: List[JsonLoadResult[T]]
+
+    def to_polars(self, include_path_as_column: bool = False) -> polars.DataFrame:
+        """Convert the loaded json files to a Polars DataFrame.
+
+        This method converts all model instances in the result to a Polars DataFrame.
+        Each row in the DataFrame represents one model instance.
+
+        Args:
+            include_path_as_column: If True, adds a 'path' column with the file path
+                                   for each row. Default is False.
+
+        Returns:
+            Polars DataFrame containing the model data
+        """
+        if not self.value:
+            # Return an empty DataFrame if there are no rows
+            return polars.DataFrame()
+
+        # Convert each model to a dict
+        data_dicts = []
+        for row in self.value:
+            data_dict = row.value.model_dump()
+            if include_path_as_column:
+                data_dict["path"] = str(row.path)
+            data_dicts.append(data_dict)
+
+        # Create a DataFrame from the list of dicts
+        df = polars.DataFrame(data_dicts)
+
+        return df
+
+    def to_pandas(self, include_path_as_column: bool = False) -> pandas.DataFrame:
+        """
+        Convert the loaded json files to a Pandas DataFrame.
+        """
+
+        if not self.value:
+            # Return an empty DataFrame if there are no rows
+            return pandas.DataFrame()
+
+        # Convert each model to a dict
+        data_dicts = []
+        for row in self.value:
+            data_dict = row.value.model_dump()
+            if include_path_as_column:
+                data_dict["path"] = str(row.path)
+            data_dicts.append(data_dict)
+
+        # Create a DataFrame from the list of dicts
+        df = pandas.DataFrame(data_dicts)
+
+        return df
 
 
 class JsonsLoader(Generic[T]):
