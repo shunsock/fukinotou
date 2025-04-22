@@ -27,5 +27,10 @@ dev = [
 [tool.hatch.build.targets.wheel]
 include = ["src/fukinotou/py.typed"]
 
+[dependency-groups]
+dev = [
+    "pandas-stubs>=2.2.3.250308",
+]
+
 [tool.hatch.build]
 packages = ["src/fukinotou"]
