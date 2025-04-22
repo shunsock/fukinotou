@@ -282,3 +282,167 @@ class TestParquetLoader:
         finally:
             # Clean up
             os.unlink(temp_path)
+
+    def test_to_polars_with_data(self) -> None:
+        """
+        Test that ParquetLoadResult.to_polars() correctly converts data to Polars DataFrame.
+
+        This test verifies that the to_polars method properly converts the model instances
+        to a Polars DataFrame with the expected structure and values.
+
+        Expected: Polars DataFrame with correct data
+        """
+        # Arrange
+        data = {
+            "name": ["Alice", "Bob"],
+            "age": [30, 25],
+            "city": ["New York", "Chicago"],
+        }
+
+        df = pl.DataFrame(data)
+
+        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp_file:
+            temp_path = Path(temp_file.name)
+
+        # Write to the temp file
+        df.write_parquet(temp_path)
+
+        try:
+            loader = ParquetLoader(temp_path, _TestModel)
+            result = loader.load()
+
+            # Act
+            df = result.to_polars()
+
+            # Assert
+            assert df.shape == (2, 3)  # 2 rows, 3 columns (name, age, city)
+            assert set(df.columns) == {"name", "age", "city"}
+            assert df["name"].to_list() == ["Alice", "Bob"]
+            assert df["age"].to_list() == [30, 25]
+            assert df["city"].to_list() == ["New York", "Chicago"]
+
+            # Act with path column
+            df_with_path = result.to_polars(include_path_as_column=True)
+
+            # Assert
+            assert df_with_path.shape == (2, 4)  # 2 rows, 4 columns (with path)
+            assert "path" in df_with_path.columns
+            assert df_with_path["path"].to_list() == [str(temp_path), str(temp_path)]
+        finally:
+            # Clean up
+            os.unlink(temp_path)
+
+    def test_to_polars_empty_data(self) -> None:
+        """
+        Test that ParquetLoadResult.to_polars() handles empty data correctly.
+
+        This test verifies that the to_polars method returns an empty
+        DataFrame when there are no values in the result.
+
+        Expected: Empty Polars DataFrame
+        """
+        # Arrange
+        data = {"name": [], "age": [], "city": []}
+        df = pl.DataFrame(data)
+
+        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp_file:
+            temp_path = Path(temp_file.name)
+
+        # Write to the temp file
+        df.write_parquet(temp_path)
+
+        try:
+            loader = ParquetLoader(temp_path, _TestModel)
+            result = loader.load()
+
+            # Act
+            df = result.to_polars()
+
+            # Assert
+            assert df.shape == (0, 0)  # Empty DataFrame
+            assert len(df.columns) == 0
+        finally:
+            # Clean up
+            os.unlink(temp_path)
+
+    def test_to_pandas_with_data(self) -> None:
+        """
+        Test that ParquetLoadResult.to_pandas() correctly converts data to Pandas DataFrame.
+
+        This test verifies that the to_pandas method properly converts the model instances
+        to a Pandas DataFrame with the expected structure and values.
+
+        Expected: Pandas DataFrame with correct data
+        """
+        # Arrange
+        data = {
+            "name": ["Alice", "Bob"],
+            "age": [30, 25],
+            "city": ["New York", "Chicago"],
+        }
+
+        df = pl.DataFrame(data)
+
+        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp_file:
+            temp_path = Path(temp_file.name)
+
+        # Write to the temp file
+        df.write_parquet(temp_path)
+
+        try:
+            loader = ParquetLoader(temp_path, _TestModel)
+            result = loader.load()
+
+            # Act
+            df = result.to_pandas()
+
+            # Assert
+            assert df.shape == (2, 3)  # 2 rows, 3 columns (name, age, city)
+            assert set(df.columns) == {"name", "age", "city"}
+            assert df["name"].tolist() == ["Alice", "Bob"]
+            assert df["age"].tolist() == [30, 25]
+            assert df["city"].tolist() == ["New York", "Chicago"]
+
+            # Act with path column
+            df_with_path = result.to_pandas(include_path_as_column=True)
+
+            # Assert
+            assert df_with_path.shape == (2, 4)  # 2 rows, 4 columns (with path)
+            assert "path" in df_with_path.columns
+            assert df_with_path["path"].tolist() == [str(temp_path), str(temp_path)]
+        finally:
+            # Clean up
+            os.unlink(temp_path)
+
+    def test_to_pandas_empty_data(self) -> None:
+        """
+        Test that ParquetLoadResult.to_pandas() handles empty data correctly.
+
+        This test verifies that the to_pandas method returns an empty
+        DataFrame when there are no values in the result.
+
+        Expected: Empty Pandas DataFrame
+        """
+        # Arrange
+        data = {"name": [], "age": [], "city": []}
+        df = pl.DataFrame(data)
+
+        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp_file:
+            temp_path = Path(temp_file.name)
+
+        # Write to the temp file
+        df.write_parquet(temp_path)
+
+        try:
+            loader = ParquetLoader(temp_path, _TestModel)
+            result = loader.load()
+
+            # Act
+            df = result.to_pandas()
+
+            # Assert
+            assert df.shape == (0, 0)  # Empty DataFrame
+            assert len(df.columns) == 0
+        finally:
+            # Clean up
+            os.unlink(temp_path)
