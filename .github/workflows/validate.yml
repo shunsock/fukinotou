@@ -20,9 +20,9 @@ jobs:
         with:
           version: '3.x'
       - name: Set up uv
-        uses: astral-sh/setup-uv-action@v1
+        uses: astral-sh/setup-uv@v5
         with:
-          uv-version: latest
+          version: "0.6.16"
       - name: Install dependencies
         run: |
           task install
