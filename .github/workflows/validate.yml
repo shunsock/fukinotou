@@ -19,6 +19,10 @@ jobs:
         uses: arduino/setup-task@v1
         with:
           version: '3.x'
+      - name: Set up uv
+        uses: astral-sh/setup-uv-action@v1
+        with:
+          uv-version: latest
       - name: Install dependencies
         run: |
           task install
