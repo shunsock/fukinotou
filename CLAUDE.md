@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Code Style Guidelines
 - **Type Annotations**: Required for all code (enforced with mypy and py.typed)
-- **Docstrings**: Use Google style docstrings in Japanese
+- **Docstrings**: Use Google style docstrings in English
 - **Classes**: Follow single responsibility principle, public methods need tests
 - **Testing**: Use AAA pattern (Arrange-Act-Assert), avoid mocks, clean up test objects
 - **Imports Order**: 1) Standard library, 2) Third-party, 3) Local modules
