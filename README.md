@@ -39,7 +39,7 @@ uv pip install git+https://github.com/shunsock/fukinotou.git
 ```
 
 🚧 **Under Construction**
-- You can not use this feature currently, use aboev option instead.
+- You can not use this feature currently, use above option instead.
 - To install a specific version/tag, use:
 
 ```shell
