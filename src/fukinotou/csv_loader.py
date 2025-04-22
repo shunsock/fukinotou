@@ -4,7 +4,7 @@ from typing import Dict, List, Type, TypeVar, Generic
 
 from pydantic import BaseModel
 
-T = TypeVar('T', bound=BaseModel)
+T = TypeVar("T", bound=BaseModel)
 
 
 class CsvRowLoadResult(BaseModel, Generic[T]):
@@ -14,6 +14,7 @@ class CsvRowLoadResult(BaseModel, Generic[T]):
         path: Path to the loaded file
         value: Content of the file as model instance
     """
+
     path: Path
     value: T
 
@@ -25,6 +26,7 @@ class CsvLoadResult(BaseModel, Generic[T]):
         path: Path to the loaded file
         value: List of row results
     """
+
     path: Path
     value: List[CsvRowLoadResult[T]]
 
@@ -40,6 +42,7 @@ class CsvLoader(Generic[T]):
         FileNotFoundError: The specified path does not exist
         ValueError: If the specified path is a directory
     """
+
     def __init__(self, path: str | Path, model: Type[T]) -> None:
         p = Path(path)
         if not p.exists():
@@ -73,13 +76,10 @@ class CsvLoader(Generic[T]):
                     model_instance = self.model(**row_dict)
 
                     csv_rows.append(
-                        CsvRowLoadResult(
-                            path=self.file_path,
-                            value=model_instance
-                        )
+                        CsvRowLoadResult(path=self.file_path, value=model_instance)
                     )
             except StopIteration:
                 # Handle an empty file
                 pass
-            
+
             return CsvLoadResult(path=self.file_path, value=csv_rows)

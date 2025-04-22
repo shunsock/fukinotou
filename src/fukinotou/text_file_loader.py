@@ -14,6 +14,7 @@ class TextFileLoadResult(BaseModel):
         path: Path to the loaded file
         value: Content of the file
     """
+
     path: Path
     value: str
 
@@ -24,6 +25,7 @@ class TextFileLoader:
 
     Provides functionality to load text data from a specified file path.
     """
+
     def __init__(self, path: str | Path) -> None:
         """
         Initialize the TextFileLoader.
@@ -63,6 +65,7 @@ class TextFilesLoadResult(BaseModel):
         directory_path: Path to the source directory
         value: List of results for each loaded file
     """
+
     directory_path: Path
     value: List[TextFileLoadResult]
 
@@ -73,6 +76,7 @@ class TextFilesLoader:
 
     Recursively loads all .txt files in the specified directory.
     """
+
     def __init__(self, directory_path: Path) -> None:
         """
         Initialize the TextFilesLoader.
