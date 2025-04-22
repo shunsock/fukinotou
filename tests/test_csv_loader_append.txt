@@ -1,0 +1,194 @@
+
+    def test_to_polars_conversion(self) -> None:
+        """
+        Test that CsvLoadResult.to_polars() correctly converts model instances to a Polars DataFrame.
+
+        This test verifies that the to_polars method correctly extracts data from model instances
+        and creates a Polars DataFrame with the expected structure and content.
+
+        Expected: Polars DataFrame with rows matching the model instances
+        """
+        # Arrange
+        csv_data = [
+            ["name", "age", "city"],
+            ["Alice", "30", "New York"],
+            ["Bob", "25", "Chicago"],
+            ["Charlie", "35", "San Francisco"],
+        ]
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".csv", delete=False
+        ) as temp_file:
+            writer = csv.writer(temp_file)
+            for row in csv_data:
+                writer.writerow(row)
+            temp_path = Path(temp_file.name)
+
+        try:
+            loader = CsvLoader(temp_path, _TestModel)
+            result = loader.load()
+
+            # Act
+            df = result.to_polars()
+
+            # Assert
+            assert isinstance(df, polars.DataFrame)
+            assert df.shape == (3, 3)  # 3 rows, 3 columns
+            
+            # Check column names
+            assert set(df.columns) == {"name", "age", "city"}
+            
+            # Check data values
+            assert df.row(0) == ("Alice", 30, "New York")
+            assert df.row(1) == ("Bob", 25, "Chicago")
+            assert df.row(2) == ("Charlie", 35, "San Francisco")
+
+            # Test with path column
+            df_with_path = result.to_polars(include_path_as_column=True)
+            assert set(df_with_path.columns) == {"name", "age", "city", "path"}
+            assert df_with_path.select("path").row(0)[0] == str(temp_path)
+        finally:
+            # Clean up
+            os.unlink(temp_path)
+
+    def test_to_pandas_conversion(self) -> None:
+        """
+        Test that CsvLoadResult.to_pandas() correctly converts model instances to a Pandas DataFrame.
+
+        This test verifies that the to_pandas method correctly extracts data from model instances
+        and creates a Pandas DataFrame with the expected structure and content.
+
+        Expected: Pandas DataFrame with rows matching the model instances
+        """
+        # Arrange
+        csv_data = [
+            ["name", "age", "city"],
+            ["Alice", "30", "New York"],
+            ["Bob", "25", "Chicago"],
+            ["Charlie", "35", "San Francisco"],
+        ]
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".csv", delete=False
+        ) as temp_file:
+            writer = csv.writer(temp_file)
+            for row in csv_data:
+                writer.writerow(row)
+            temp_path = Path(temp_file.name)
+
+        try:
+            loader = CsvLoader(temp_path, _TestModel)
+            result = loader.load()
+
+            # Act
+            df = result.to_pandas()
+
+            # Assert
+            assert isinstance(df, pandas.DataFrame)
+            assert df.shape == (3, 3)  # 3 rows, 3 columns
+            
+            # Check column names
+            assert set(df.columns) == {"name", "age", "city"}
+            
+            # Check data values
+            assert df.iloc[0]["name"] == "Alice"
+            assert df.iloc[0]["age"] == 30
+            assert df.iloc[0]["city"] == "New York"
+            
+            assert df.iloc[1]["name"] == "Bob"
+            assert df.iloc[1]["age"] == 25
+            assert df.iloc[1]["city"] == "Chicago"
+            
+            assert df.iloc[2]["name"] == "Charlie"
+            assert df.iloc[2]["age"] == 35
+            assert df.iloc[2]["city"] == "San Francisco"
+
+            # Test with path column
+            df_with_path = result.to_pandas(include_path_as_column=True)
+            assert set(df_with_path.columns) == {"name", "age", "city", "path"}
+            assert df_with_path["path"][0] == str(temp_path)
+        finally:
+            # Clean up
+            os.unlink(temp_path)
+
+    def test_to_polars_empty_result(self) -> None:
+        """
+        Test that CsvLoadResult.to_polars() correctly handles empty results.
+
+        This test verifies that the to_polars method returns an empty DataFrame
+        when there are no model instances in the result.
+
+        Expected: Empty Polars DataFrame
+        """
+        # Arrange
+        csv_data = [
+            ["name", "age", "city"]  # header only
+        ]
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".csv", delete=False
+        ) as temp_file:
+            writer = csv.writer(temp_file)
+            for row in csv_data:
+                writer.writerow(row)
+            temp_path = Path(temp_file.name)
+
+        try:
+            loader = CsvLoader(temp_path, _TestModel)
+            result = loader.load()
+
+            # Act
+            df = result.to_polars()
+
+            # Assert
+            assert isinstance(df, polars.DataFrame)
+            assert df.shape == (0, 0)  # Empty DataFrame
+            
+            # Test with path column (still empty but with path column)
+            df_with_path = result.to_polars(include_path_as_column=True)
+            assert isinstance(df_with_path, polars.DataFrame)
+            assert df_with_path.shape == (0, 0)  # Still empty
+        finally:
+            # Clean up
+            os.unlink(temp_path)
+
+    def test_to_pandas_empty_result(self) -> None:
+        """
+        Test that CsvLoadResult.to_pandas() correctly handles empty results.
+
+        This test verifies that the to_pandas method returns an empty DataFrame
+        when there are no model instances in the result.
+
+        Expected: Empty Pandas DataFrame
+        """
+        # Arrange
+        csv_data = [
+            ["name", "age", "city"]  # header only
+        ]
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".csv", delete=False
+        ) as temp_file:
+            writer = csv.writer(temp_file)
+            for row in csv_data:
+                writer.writerow(row)
+            temp_path = Path(temp_file.name)
+
+        try:
+            loader = CsvLoader(temp_path, _TestModel)
+            result = loader.load()
+
+            # Act
+            df = result.to_pandas()
+
+            # Assert
+            assert isinstance(df, pandas.DataFrame)
+            assert df.shape == (0, 0)  # Empty DataFrame
+            
+            # Test with path column (still empty but with path column)
+            df_with_path = result.to_pandas(include_path_as_column=True)
+            assert isinstance(df_with_path, pandas.DataFrame)
+            assert df_with_path.shape == (0, 0)  # Still empty
+        finally:
+            # Clean up
+            os.unlink(temp_path)
