@@ -27,8 +27,26 @@ pip install git+https://github.com/shunsock/fukinotou.git
 ## Usage
 
 ```python
-from fukinotou import DataLoader
+from fukinotou import CsvLoader, CsvLoadResult
+from pydantic import BaseModel
+import polars
+import pandas
+
+class User(BaseModel):
+    id: int
+    name: str
+    age: int
+
+try:
+   users: CsvLoadResult[User]  = CsvLoader("./data.csv", User).load()
+   polars_df: polars.DataFrame = users.to_polars(include_path_as_column=False)
+   pandas_df: pandas.DataFrame = users.to_pandas(include_path_as_column=True)
+except FileNotFoundError as e:
+    print(f"Error loading data at reading phase: {e}")
+except ValueError as e:
+   print(f"Error loading data at validation phase: {e}")
 ```
+
 ## Development
 
 ### Taskfile for Developing
@@ -51,11 +69,3 @@ This project uses [Task](https://taskfile.dev/) for managing development tasks. 
    - `task lint` (checks for code style issues)
    - `task typecheck` (verifies type annotations)
    - `task test` (runs all tests to ensure functionality)
-
-### Coding Style
-- **Type Annotations**: Always use type annotations. Use `typeguard` for 3rd party tools without types.
-- **Docstrings**: docstrings for all classes and methods in English. Describe what the code does, not how. docstrings style must be Google style.
-- **Classes**: Each class has a single responsibility. Public methods have tests.
-- **Testing**: Use AAA pattern (Arrange-Act-Assert). Avoid mocks when possible. Clean up test objects.
-- **Imports**: Standard library first, third-party second, local modules last.
-- **Naming**: Use descriptive names in English. Classes are PascalCase, methods/functions are snake_case.
