@@ -1,0 +1,24 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    allow:
+      - dependency-name: "pydantic"
+      - dependency-name: "pandas"
+      - dependency-name: "polars"
+    ignore:
+      - dependency-name: "pydantic"
+        update-types:
+          - "version-update:semver-patch"
+      - dependency-name: "pandas"
+        update-types:
+          - "version-update:semver-patch"
+      - dependency-name: "polars"
+        update-types:
+          - "version-update:semver-patch"
