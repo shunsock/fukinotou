@@ -11,3 +11,5 @@ wheels/
 
 # IntelliJ IDEA
 .idea/
+
+.python_version
