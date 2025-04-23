@@ -22,10 +22,20 @@ from fukinotou.parquet_loader import (
     ParquetLoadResult,
     ParquetLoader,
 )
+from fukinotou.image_loader import (
+    ImageFileLoadResult,
+    ImageFileLoader,
+    ImageFilesLoadResult,
+    ImageFilesLoader,
+)
 
 __all__ = [
     "CsvLoadResult",
     "CsvLoader",
+    "ImageFileLoadResult",
+    "ImageFileLoader",
+    "ImageFilesLoadResult",
+    "ImageFilesLoader",
     "JsonLoader",
     "JsonLoadResult",
     "JsonsLoadResult",
