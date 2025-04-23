@@ -77,7 +77,7 @@ class ImageFilesLoader:
     """
     Loader for multiple image files in a directory.
 
-    Recursively loads all .txt files in the specified directory.
+    Recursively loads all image files with specified extensions in the given directory.
     """
 
     def __init__(self, directory_path: Path, extensions: List[str]) -> None:
