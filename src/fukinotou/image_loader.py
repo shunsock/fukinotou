@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from PIL import Image
 
 from .path_handler.path_searcher import PathSearcher
@@ -16,8 +16,10 @@ class ImageFileLoadResult(BaseModel):
         value: Content of the file
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     path: Path
-    value: Image
+    value: Image.Image
 
 
 class ImageFileLoader:
@@ -97,8 +99,7 @@ class ImageFilesLoader:
         self.directory_path = directory_path
         self.image_files_guaranteed = (
             PathSearcher.search_specific_extensions_paths_from_directory_path(
-                path=directory_path,
-                extensions=extensions
+                path=directory_path, extensions=extensions
             )
         )
 
