@@ -1,8 +1,6 @@
 # Fukinotou
 
-A simple Data Loader for Python.
-
-## Motivation
+## About
 
 Fukinotou is a simple data loader with validation capabilities. You can supply data path and a Pydantic model, and it will load the data into `*LoadResult` object which contains the validated data and path information.
 
@@ -72,7 +70,9 @@ class User(BaseModel):
 try:
    users: CsvLoadResult[User]  = CsvLoader("./data.csv", User).load()
    polars_df: polars.DataFrame = users.to_polars(include_path_as_column=False)
+   print(polars_df)
    pandas_df: pandas.DataFrame = users.to_pandas(include_path_as_column=True)
+   print(pandas_df)
 except FileNotFoundError as e:
     print(f"Error loading data at reading phase: {e}")
 except ValueError as e:
@@ -125,6 +125,12 @@ from fukinotou.csv_loader import (
 from fukinotou.parquet_loader import (
     ParquetLoadResult,
     ParquetLoader,
+)
+from fukinotou.image_loader import (
+   ImageFileLoadResult,
+   ImageFileLoader,
+   ImageFilesLoadResult,
+   ImageFilesLoader,
 )
 ```
 
