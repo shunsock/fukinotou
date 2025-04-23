@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "shunsock", email = "s.tsuchiya.business@gmail.com" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     "pandas>=2.2.3",
     "pillow>=11.2.1",
