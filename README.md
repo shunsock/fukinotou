@@ -30,6 +30,10 @@ class JsonsLoadResult(BaseModel, Generic[T]):
 
 You can install Fukinotou directly from GitHub using uv or pip.
 
+### Requirements
+
+Python 3.10 or later is required.
+
 ### Using uv (recommended):
 
 ```shell
