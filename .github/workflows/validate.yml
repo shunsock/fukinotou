@@ -9,7 +9,13 @@ on:
 
 jobs:
   validate-python:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.10, 3.11, 3.12, 3.13]
+
     steps:
       - uses: actions/checkout@v4
 
@@ -20,11 +26,11 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
-      - name: Set up Python
-        run: uv python install
+      - name: Install Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
 
       - name: Create venv
-        run: uv venv
+        run: uv venv --python ${{ matrix.python-version }}
 
       - name: Sync project (install deps)
         run: uv sync --locked --all-extras --dev
