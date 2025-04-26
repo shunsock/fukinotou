@@ -1,6 +1,0 @@
-{
-  "name": "Example 2",
-  "values": [10, 20, 30],
-  "nested": {"key": "value2"},
-  "id": 2
-}

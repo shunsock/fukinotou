@@ -1,6 +1,0 @@
-{
-  "name": "Subdir 2",
-  "values": [4000, 5000, 6000],
-  "nested": {"subkey": "subvalue2"},
-  "id": 5
-}

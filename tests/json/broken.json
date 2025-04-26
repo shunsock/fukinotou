@@ -1,6 +1,0 @@
-{
-  "name": "Broken JSON",
-  "values": [1, 2, 3,
-  "nested": {"key": "value"},
-  "id": 5
-}
