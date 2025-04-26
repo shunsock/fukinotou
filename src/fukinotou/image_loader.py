@@ -79,6 +79,7 @@ class ImageFilesLoader:
 
     Recursively loads all image files with specified extensions in the given directory.
     """
+
     @staticmethod
     def load(path: str | Path, extensions: List[str]) -> ImageFilesLoadResult:
         """
