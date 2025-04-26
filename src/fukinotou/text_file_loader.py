@@ -36,14 +36,10 @@ class TextFileLoader:
             TextFileLoadResult: Result object containing the file path and its content
         """
         p = Path(path)
-        if not Path(path).exists():
-            raise LoadingError(
-                original_exception=None, error_message=f"File not found: {path}"
-            )
-        if not Path(path).is_file():
+        if not p.is_file():
             raise LoadingError(
                 original_exception=None,
-                error_message=f"Input path is directory path: {path}",
+                error_message=f"Input path is invalid: {path}",
             )
         try:
             content = p.read_text(encoding=encoding)
@@ -86,14 +82,10 @@ class TextFilesLoader:
             TextFilesLoadResult: Object containing the directory path and loading results for each file
         """
         p = Path(path)
-        if not Path(path).exists():
-            raise LoadingError(
-                original_exception=None, error_message=f"File not found: {path}"
-            )
-        if not Path(path).is_dir():
+        if not p.is_dir():
             raise LoadingError(
                 original_exception=None,
-                error_message=f"Input path is file path: {path}",
+                error_message=f"Input path is invalid: {path}",
             )
 
         text_files: List[Path] = (

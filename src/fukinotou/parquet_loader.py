@@ -114,13 +114,9 @@ class ParquetLoader(Generic[T]):
             ValueError: If a row fails model validation
         """
         p = Path(path)
-        if not p.exists():
-            raise LoadingError(
-                original_exception=None, error_message=f"File not found: {p}"
-            )
         if not p.is_file():
             raise LoadingError(
-                original_exception=None, error_message=f"Input path is a directory: {p}"
+                original_exception=None, error_message=f"Input path is invalid: {p}"
             )
 
         # we cannot expect all error of read_parquet()

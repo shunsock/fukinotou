@@ -28,14 +28,14 @@ class TestJsonLoader:
         This test verifies that an appropriate exception is raised when trying to
         load a JSON file with a path that doesn't exist on the file system.
 
-        Expected: LoadingError with message containing "File not found"
+        Expected: LoadingError with message containing "Input path is invalid"
         """
         # Arrange
         non_existent_path = Path(__file__).parent / "json" / "nonexistent.json"
         loader = JsonLoader(_TestModel)
 
         # Act & Assert
-        with pytest.raises(LoadingError, match="File not found"):
+        with pytest.raises(LoadingError, match="Input path is invalid"):
             loader.load(non_existent_path)
 
     def test_load_directory_path(self) -> None:
@@ -52,7 +52,7 @@ class TestJsonLoader:
         loader = JsonLoader(_TestModel)
 
         # Act & Assert
-        with pytest.raises(ValueError, match="Input path is directory path"):
+        with pytest.raises(ValueError, match="Input path is invalid"):
             loader.load(dir_path)
 
     def test_load_json_file_successfully(self) -> None:
