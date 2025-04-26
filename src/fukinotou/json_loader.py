@@ -25,7 +25,7 @@ class JsonLoaded(BaseModel, Generic[T]):
     value: T
 
 
-class JsonsLoaded(BaseModel, Generic[T], DataframeExportable):
+class JsonsLoaded(Generic[T], DataframeExportable):
     """Model representing the result of loading multiple JSON files.
 
     Attributes:

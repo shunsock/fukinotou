@@ -22,7 +22,7 @@ class CsvRow(BaseModel, Generic[T]):
     value: T
 
 
-class CsvLoaded(BaseModel, Generic[T], DataframeExportable):
+class CsvLoaded(Generic[T], DataframeExportable):
     """Model representing the result of loading an entire CSV file.
 
     Attributes:

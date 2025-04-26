@@ -1,15 +1,18 @@
 from pathlib import Path
 
-from typing import List, Any
+from typing import List, Generic, TypeVar
+from pydantic import BaseModel
 
 
 import polars
 import pandas
 
+T = TypeVar("T")
 
-class DataframeExportable:
+
+class DataframeExportable(BaseModel, Generic[T]):
     path: Path
-    value: List[Any]
+    value: List[T]
 
     def to_polars(self, include_path_as_column: bool = False) -> polars.DataFrame:
         """Convert the result to a Polars DataFrame.
