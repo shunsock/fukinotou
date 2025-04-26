@@ -4,11 +4,11 @@ from typing import List
 from pydantic import BaseModel, ConfigDict
 from PIL import Image
 
-from .load_error import LoadingError
+from .exception.loading_exception import LoadingException
 from .path_handler.path_searcher import PathSearcher
 
 
-class ImageFileLoadResult(BaseModel):
+class ImageLoaded(BaseModel):
     """
     Model representing the result of loading a image file.
 
@@ -23,44 +23,7 @@ class ImageFileLoadResult(BaseModel):
     value: Image.Image
 
 
-class ImageFileLoader:
-    """
-    Loader for a single image file.
-
-    Provides functionality to load image data from a specified file path.
-    """
-
-    @staticmethod
-    def load(path: str | Path) -> ImageFileLoadResult:
-        """
-        Load the content of the file.
-
-        Returns:
-            ImageFileLoadResult: Result object containing the file path and its content
-        """
-        p = Path(path)
-        if not Path(p).exists():
-            raise LoadingError(
-                original_exception=None, error_message=f"File not found: {p}"
-            )
-        if not Path(p).is_file():
-            raise LoadingError(
-                original_exception=None,
-                error_message=f"Input path is directory path: {p}",
-            )
-        try:
-            image = Image.open(p)
-            return ImageFileLoadResult(
-                path=p,
-                value=image,
-            )
-        except Exception as e:
-            raise LoadingError(
-                original_exception=e, error_message=f"Error reading file {p}: {e}"
-            )
-
-
-class ImageFilesLoadResult(BaseModel):
+class ImagesLoaded(BaseModel):
     """
     Model representing the result of loading multiple image files.
 
@@ -70,10 +33,47 @@ class ImageFilesLoadResult(BaseModel):
     """
 
     path: Path
-    value: List[ImageFileLoadResult]
+    value: List[ImageLoaded]
 
 
-class ImageFilesLoader:
+class ImageLoader:
+    """
+    Loader for a single image file.
+
+    Provides functionality to load image data from a specified file path.
+    """
+
+    @staticmethod
+    def load(path: str | Path) -> ImageLoaded:
+        """
+        Load the content of the file.
+
+        Returns:
+            ImageLoaded: Result object containing the file path and its content
+        """
+        p = Path(path)
+        if not Path(p).exists():
+            raise LoadingException(
+                original_exception=None, error_message=f"File not found: {p}"
+            )
+        if not Path(p).is_file():
+            raise LoadingException(
+                original_exception=None,
+                error_message=f"Input path is directory path: {p}",
+            )
+        try:
+            image = Image.open(p)
+            return ImageLoaded(
+                path=p,
+                value=image,
+            )
+        except Exception as e:
+            raise LoadingException(
+                original_exception=e, error_message=f"Error reading file {p}: {e}"
+            )
+
+
+class ImagesLoader:
     """
     Loader for multiple image files in a directory.
 
@@ -81,16 +81,16 @@ class ImageFilesLoader:
     """
 
     @staticmethod
-    def load(path: str | Path, extensions: List[str]) -> ImageFilesLoadResult:
+    def load(path: str | Path, extensions: List[str]) -> ImagesLoaded:
         """
         Load all image files in the directory.
 
         Returns:
-            ImageFilesLoadResult: Object containing the directory path and loading results for each file
+            ImagesLoaded: Object containing the directory path and loading results for each file
         """
         p = Path(path)
         if not p.is_dir():
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=None,
                 error_message=f"Input path is invalid: {p}",
             )
@@ -101,10 +101,10 @@ class ImageFilesLoader:
             )
         )
 
-        results: List[ImageFileLoadResult] = [
-            ImageFileLoader().load(image_file) for image_file in image_file_paths
+        results: List[ImageLoaded] = [
+            ImageLoader().load(image_file) for image_file in image_file_paths
         ]
-        return ImageFilesLoadResult(
+        return ImagesLoaded(
             path=p,
             value=results,
         )

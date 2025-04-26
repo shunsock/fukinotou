@@ -3,13 +3,13 @@ from typing import List, Type, TypeVar, Generic
 import json
 from pydantic import BaseModel, ValidationError
 
-from fukinotou.dataframe_exportable import DataframeExportable
-from fukinotou.load_error import LoadingError
+from fukinotou.abstraction.dataframe_exportable import DataframeExportable
+from fukinotou.exception.loading_exception import LoadingException
 
 T = TypeVar("T", bound=BaseModel)
 
 
-class JsonlRowLoadResult(BaseModel, Generic[T]):
+class JsonlRow(BaseModel, Generic[T]):
     """Model representing a single row loaded from a JSONL file.
 
     Attributes:
@@ -21,16 +21,16 @@ class JsonlRowLoadResult(BaseModel, Generic[T]):
     value: T
 
 
-class JsonlLoadResult(BaseModel, Generic[T], DataframeExportable):
+class JsonlLoaded(BaseModel, Generic[T], DataframeExportable):
     """Model representing the result of loading an entire JSONL file.
 
     Attributes:
         path: Path to the loaded file
-        value: List of row results
+        value: List of rows
     """
 
     path: Path
-    value: List[JsonlRowLoadResult[T]]
+    value: List[JsonlRow[T]]
 
 
 class JsonlLoader(Generic[T]):
@@ -51,7 +51,7 @@ class JsonlLoader(Generic[T]):
         """
         self.model = model
 
-    def load(self, path: str | Path, encoding: str = "utf-8") -> JsonlLoadResult[T]:
+    def load(self, path: str | Path, encoding: str = "utf-8") -> JsonlLoaded[T]:
         """Load and validate data from a JSONL file.
 
         Reads a JSONL file, validates each row against the provided model class,
@@ -72,9 +72,9 @@ class JsonlLoader(Generic[T]):
         """
         p = Path(path)
         if not p.is_file():
-            raise LoadingError(f"Input path is invalid: {p}")
+            raise LoadingException(f"Input path is invalid: {p}")
 
-        jsonl_rows: List[JsonlRowLoadResult[T]] = []
+        jsonl_rows: List[JsonlRow[T]] = []
         try:
             f = p.open(mode="r", encoding=encoding)
             for lineno, line in enumerate(f, start=1):
@@ -89,20 +89,20 @@ class JsonlLoader(Generic[T]):
                     obj = json.loads(raw)
                     parsed: T = self.model.model_validate(obj)
                 except json.JSONDecodeError as e:
-                    raise LoadingError(
+                    raise LoadingException(
                         original_exception=e,
                         error_message=f"Error parsing JSON on line {lineno} of {p}: {e}",
                     )
                 except ValidationError as e:
-                    raise LoadingError(
+                    raise LoadingException(
                         original_exception=e,
                         error_message=f"Error validating row {lineno} of {p}: {e}",
                     )
 
-                jsonl_rows.append(JsonlRowLoadResult(path=p, value=parsed))
+                jsonl_rows.append(JsonlRow(path=p, value=parsed))
         except FileNotFoundError as e:
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=e, error_message=f"Error reading file {p}: {e}"
             )
 
-        return JsonlLoadResult(path=p, value=jsonl_rows)
+        return JsonlLoaded(path=p, value=jsonl_rows)

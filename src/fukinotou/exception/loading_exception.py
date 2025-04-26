@@ -1,4 +1,4 @@
-class LoadingError(Exception):
+class LoadingException(Exception):
     def __init__(self, error_message: str, original_exception: Exception | None = None):
         self.error_message = error_message
         self.original_exception = original_exception

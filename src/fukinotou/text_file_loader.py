@@ -3,11 +3,11 @@ from typing import List
 
 from pydantic import BaseModel
 
-from .load_error import LoadingError
+from .exception.loading_exception import LoadingException
 from .path_handler.path_searcher import PathSearcher
 
 
-class TextFileLoadResult(BaseModel):
+class TextFileLoaded(BaseModel):
     """
     Model representing the result of loading a text file.
 
@@ -20,40 +20,7 @@ class TextFileLoadResult(BaseModel):
     value: str
 
 
-class TextFileLoader:
-    """
-    Loader for a single text file.
-
-    Provides functionality to load text data from a specified file path.
-    """
-
-    @staticmethod
-    def load(path: str | Path, encoding: str = "utf-8") -> TextFileLoadResult:
-        """
-        Load the content of the file.
-
-        Returns:
-            TextFileLoadResult: Result object containing the file path and its content
-        """
-        p = Path(path)
-        if not p.is_file():
-            raise LoadingError(
-                original_exception=None,
-                error_message=f"Input path is invalid: {path}",
-            )
-        try:
-            content = p.read_text(encoding=encoding)
-            return TextFileLoadResult(
-                path=p,
-                value=content,
-            )
-        except Exception as e:
-            raise LoadingError(
-                original_exception=e, error_message=f"Error reading file {path}: {e}"
-            )
-
-
-class TextFilesLoadResult(BaseModel):
+class TextFilesLoaded(BaseModel):
     """
     Model representing the result of loading multiple text files.
 
@@ -63,7 +30,40 @@ class TextFilesLoadResult(BaseModel):
     """
 
     path: Path
-    value: List[TextFileLoadResult]
+    value: List[TextFileLoaded]
+
+
+class TextFileLoader:
+    """
+    Loader for a single text file.
+
+    Provides functionality to load text data from a specified file path.
+    """
+
+    @staticmethod
+    def load(path: str | Path, encoding: str = "utf-8") -> TextFileLoaded:
+        """
+        Load the content of the file.
+
+        Returns:
+            TextFileLoaded: Result object containing the file path and its content
+        """
+        p = Path(path)
+        if not p.is_file():
+            raise LoadingException(
+                original_exception=None,
+                error_message=f"Input path is invalid: {path}",
+            )
+        try:
+            content = p.read_text(encoding=encoding)
+            return TextFileLoaded(
+                path=p,
+                value=content,
+            )
+        except Exception as e:
+            raise LoadingException(
+                original_exception=e, error_message=f"Error reading file {path}: {e}"
+            )
 
 
 class TextFilesLoader:
@@ -74,16 +74,16 @@ class TextFilesLoader:
     """
 
     @staticmethod
-    def load(path: str | Path, encoding: str = "utf-8") -> TextFilesLoadResult:
+    def load(path: str | Path, encoding: str = "utf-8") -> TextFilesLoaded:
         """
         Load all text files in the directory.
 
         Returns:
-            TextFilesLoadResult: Object containing the directory path and loading results for each file
+            TextFilesLoaded: Object containing the directory path and loading results for each file
         """
         p = Path(path)
         if not p.is_dir():
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=None,
                 error_message=f"Input path is invalid: {path}",
             )
@@ -97,11 +97,11 @@ class TextFilesLoader:
 
         # propagate LoadingError
         loader = TextFileLoader()
-        results: List[TextFileLoadResult] = [
+        results: List[TextFileLoaded] = [
             loader.load(text_file) for text_file in text_files
         ]
 
-        return TextFilesLoadResult(
+        return TextFilesLoaded(
             path=p,
             value=results,
         )

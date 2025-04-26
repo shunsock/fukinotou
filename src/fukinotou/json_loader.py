@@ -5,14 +5,14 @@ import json
 
 from pydantic import BaseModel, ValidationError
 
-from .dataframe_exportable import DataframeExportable
-from .load_error import LoadingError
+from .abstraction.dataframe_exportable import DataframeExportable
+from .exception.loading_exception import LoadingException
 from .path_handler.path_searcher import PathSearcher
 
 T = TypeVar("T", bound=BaseModel)
 
 
-class JsonLoadResult(BaseModel, Generic[T]):
+class JsonLoaded(BaseModel, Generic[T]):
     """
     Model representing the result of loading a json file.
 
@@ -23,6 +23,18 @@ class JsonLoadResult(BaseModel, Generic[T]):
 
     path: Path
     value: T
+
+
+class JsonsLoaded(BaseModel, Generic[T], DataframeExportable):
+    """Model representing the result of loading multiple JSON files.
+
+    Attributes:
+        path: Path to the directory from which files were loaded
+        value: List of JSON load results, each containing a model instance
+    """
+
+    path: Path
+    value: List[JsonLoaded[T]]
 
 
 class JsonLoader(Generic[T]):
@@ -44,7 +56,7 @@ class JsonLoader(Generic[T]):
         """
         self.model = model
 
-    def load(self, path: str | Path) -> JsonLoadResult[T]:
+    def load(self, path: str | Path) -> JsonLoaded[T]:
         """Load and validate data from a JSON file.
 
         Reads a JSON file, validates its content against the provided model class,
@@ -62,7 +74,7 @@ class JsonLoader(Generic[T]):
         """
         p = Path(path)
         if not p.is_file():
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=None, error_message=f"Input path is invalid: {path}"
             )
 
@@ -71,28 +83,16 @@ class JsonLoader(Generic[T]):
             raw = json.load(f)
             parsed = self.model.model_validate(raw)
         except json.JSONDecodeError as e:
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=e,
                 error_message=f"Error parsing JSON file {path}: {e}",
             )
         except ValidationError as e:
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=e,
                 error_message=f"Error validating JSON file {path}: {e}",
             )
-        return JsonLoadResult(path=p, value=parsed)
-
-
-class JsonsLoadResult(BaseModel, Generic[T], DataframeExportable):
-    """Model representing the result of loading multiple JSON files.
-
-    Attributes:
-        path: Path to the directory from which files were loaded
-        value: List of JSON load results, each containing a model instance
-    """
-
-    path: Path
-    value: List[JsonLoadResult[T]]
+        return JsonLoaded(path=p, value=parsed)
 
 
 class JsonsLoader(Generic[T]):
@@ -114,7 +114,7 @@ class JsonsLoader(Generic[T]):
         """
         self.model = model
 
-    def load(self, directory_path: str | Path) -> JsonsLoadResult[T]:
+    def load(self, directory_path: str | Path) -> JsonsLoaded[T]:
         """Load and validate data from all JSON files in a directory.
 
         Scans a directory for JSON files, reads each file, validates its content
@@ -132,7 +132,7 @@ class JsonsLoader(Generic[T]):
         """
         d = Path(directory_path)
         if not d.is_dir():
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=None,
                 error_message=f"Input path is not directory: {d}",
             )
@@ -146,8 +146,8 @@ class JsonsLoader(Generic[T]):
 
         # Raise Error if we found any invalid rows
         loader = JsonLoader(model=self.model)
-        results: List[JsonLoadResult[T]] = [
+        results: List[JsonLoaded[T]] = [
             loader.load(json_file) for json_file in json_files
         ]
 
-        return JsonsLoadResult(path=d, value=results)
+        return JsonsLoaded(path=d, value=results)

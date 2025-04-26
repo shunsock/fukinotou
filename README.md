@@ -1,29 +1,54 @@
 # Fukinotou
 
-## About
+Fukinotou is a Data Loader that we can inject our domain model.
 
-Fukinotou is a simple data loader with validation capabilities. You can supply data path and a Pydantic model, and it will load the data into `*LoadResult` object which contains the validated data and path information.
+## Why Fukinotou
+
+### Validated during loading, but not afterward
+
+Nowadays, validating data is a common idea before transforming or exporting. And we also have Pydantic Models in application.
+If you are FastAPI user, you may see the following code.
 
 ```python
-class JsonLoadResult(BaseModel, Generic[T]):
-    path: Path
-    value: T
+class Item(BaseModel):
+    name: str
+    price: float
+    is_offer: Union[bool, None] = None
 ```
 
-We also provide method `to_polars` and `to_pandas` to convert the loaded data into Polars or Pandas DataFrame.
+Fukinotou is a package to validate file content with our Pydantic Model.
 
 ```python
-class JsonsLoadResult(BaseModel, Generic[T]):
-    directory_path: Path
-    value: List[JsonLoadResult[T]]
+from fukinotou import JsonLoader, JsonLoaded
 
-    def to_polars(self, include_path_as_column: bool = False) -> polars.DataFrame:
-        # ...
-        return df
+# JsonLoaded[ OUR_PYDANTIC_MODEL ]
+users: JsonLoaded[Visitor] = JsonLoader(Visitor).load("./visitor.json")
+```
 
-    def to_pandas(self, include_path_as_column: bool = False) -> pandas.DataFrame:
-        # ...
-        return df
+### Path Information is combined with loaded values
+
+Path information is important when debugging analysis. Fukinotou protests your path information.
+
+```python
+from fukinotou import CsvLoader, CsvLoaded
+
+users: CsvLoaded[Visitor] = CsvLoader(Visitor).load("./visitor.csv")
+print(users.path)
+print(users[0].path) # you can ith of row value with users[i].value
+```
+
+### Export to Dataframe
+
+We often export collections to dataframe object (such as `pandas`, `polars`, and so on).
+
+Tackling the issue, we also provide method `to_polars` and `to_pandas` to convert the loaded data into Polars or Pandas Dataframe through `DataframeExportable`
+Thus, we can export easily, by calling these methods from class inheriting `DataframeExportable` (ex: `JsonsLoaded`).
+
+```python
+from fukinotou import JsonLoader, JsonsLoaded
+import polars
+users: JsonsLoaded[Visitor] = JsonLoader(Visitor).load("./path_to_dir")
+polars_df: polars.DataFrame = users.to_polars(include_path_as_column=False)
 ```
 
 ## Install
@@ -61,26 +86,26 @@ pip install git+https://github.com/shunsock/fukinotou.git
 You can load CSV files using `CsvLoader`. It will automatically validate the data against the provided Pydantic model.
 
 ```python
-from fukinotou import CsvLoader, CsvLoadResult
+from fukinotou import CsvLoader, CsvLoaded, LoadingException
 from pydantic import BaseModel
 import polars
 import pandas
 
+
 class User(BaseModel):
-    id: int
-    name: str
-    age: int
+   id: int
+   name: str
+   age: int
+
 
 try:
-   users: CsvLoadResult[User]  = CsvLoader("./data.csv", User).load()
+   users: CsvLoaded[User] = CsvLoader(User).load("./users.csv")
    polars_df: polars.DataFrame = users.to_polars(include_path_as_column=False)
    print(polars_df)
    pandas_df: pandas.DataFrame = users.to_pandas(include_path_as_column=True)
    print(pandas_df)
-except FileNotFoundError as e:
-    print(f"Error loading data at reading phase: {e}")
-except ValueError as e:
-   print(f"Error loading data at validation phase: {e}")
+except LoadingException as e:
+   print(f"Failed to load: {e}")
 ```
 
 This is output of the above code:
@@ -107,36 +132,28 @@ shape: (3, 3)
 
 ```python
 from fukinotou.text_file_loader import (
-    TextFileLoadResult,
     TextFileLoader,
-    TextFilesLoadResult, # read files under directory at once
     TextFilesLoader,
 )
 from fukinotou.json_loader import (
-    JsonLoadResult,
     JsonLoader,
-    JsonsLoadResult, # read files under directory at once
     JsonsLoader,
 )
 from fukinotou.jsonl_loader import (
-    JsonlLoadResult,
     JsonlLoader,
 )
 from fukinotou.csv_loader import (
-    CsvLoadResult,
     CsvLoader,
 )
 from fukinotou.parquet_loader import (
-    ParquetLoadResult,
     ParquetLoader,
 )
 from fukinotou.image_loader import (
-   ImageFileLoadResult,
-   ImageFileLoader,
-   ImageFilesLoadResult,
-   ImageFilesLoader,
+    ImageLoader,
+    ImagesLoader,
 )
 ```
+
 
 ## Development
 
@@ -164,4 +181,3 @@ This project uses [Task](https://taskfile.dev/) for managing development tasks. 
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-

@@ -4,13 +4,13 @@ from typing import List, Type, TypeVar, Generic
 
 from pydantic import BaseModel, ValidationError
 
-from fukinotou.dataframe_exportable import DataframeExportable
-from fukinotou.load_error import LoadingError
+from fukinotou.abstraction.dataframe_exportable import DataframeExportable
+from fukinotou.exception.loading_exception import LoadingException
 
 T = TypeVar("T", bound=BaseModel)
 
 
-class ParquetRowLoadResult(BaseModel, Generic[T]):
+class ParquetRow(BaseModel, Generic[T]):
     """
     Model representing the result of loading a single Parquet row.
 
@@ -23,7 +23,7 @@ class ParquetRowLoadResult(BaseModel, Generic[T]):
     value: T
 
 
-class ParquetLoadResult(BaseModel, Generic[T], DataframeExportable):
+class ParquetLoaded(BaseModel, Generic[T], DataframeExportable):
     """
     Model representing the result of loading an entire Parquet file.
 
@@ -33,7 +33,7 @@ class ParquetLoadResult(BaseModel, Generic[T], DataframeExportable):
     """
 
     path: Path
-    value: List[ParquetRowLoadResult[T]]
+    value: List[ParquetRow[T]]
 
 
 class ParquetLoader(Generic[T]):
@@ -48,7 +48,7 @@ class ParquetLoader(Generic[T]):
     def __init__(self, model: Type[T]) -> None:
         self.model = model
 
-    def load(self, path: str | Path) -> ParquetLoadResult[T]:
+    def load(self, path: str | Path) -> ParquetLoaded[T]:
         """
         Load and parse the Parquet file into model instances.
 
@@ -57,7 +57,7 @@ class ParquetLoader(Generic[T]):
         containing the file path and a list of row results with model instances.
 
         Returns:
-            ParquetLoadResult[T]: Result object containing the file path and list of row results
+            ParquetLoaded[T]: Result object containing the file path and list of row results
 
         Raises:
             FileNotFoundError: If the file doesn't exist
@@ -65,7 +65,7 @@ class ParquetLoader(Generic[T]):
         """
         p = Path(path)
         if not p.is_file():
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=None, error_message=f"Input path is invalid: {p}"
             )
 
@@ -73,21 +73,21 @@ class ParquetLoader(Generic[T]):
         try:
             df = pl.read_parquet(p)
         except Exception as e:
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=e,
                 error_message=f"Error reading Parquet file {p}: {e}",
             )
 
-        results: List[ParquetRowLoadResult[T]] = []
+        results: List[ParquetRow[T]] = []
         for row_dict in df.to_dicts():
             cleaned_dict = {k: v for k, v in row_dict.items() if v is not None}
             try:
                 model_instance = self.model.model_validate(cleaned_dict)
             except ValidationError as e:
-                raise LoadingError(
+                raise LoadingException(
                     original_exception=e,
                     error_message=f"Error validating row in {p}: {e}",
                 )
-            results.append(ParquetRowLoadResult(path=p, value=model_instance))
+            results.append(ParquetRow(path=p, value=model_instance))
 
-        return ParquetLoadResult(path=p, value=results)
+        return ParquetLoaded(path=p, value=results)
