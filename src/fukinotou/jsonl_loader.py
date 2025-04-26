@@ -14,11 +14,11 @@ class JsonlRowLoadResult(BaseModel, Generic[T]):
 
     Attributes:
         path: Path to the JSONL file from which this row was loaded
-        row: The parsed and validated row data as a model instance
+        value: The parsed and validated row data as a model instance
     """
 
     path: Path
-    row: T
+    value: T
 
 
 class JsonlLoadResult(BaseModel, Generic[T], DataframeExportable):
@@ -99,7 +99,7 @@ class JsonlLoader(Generic[T]):
                         error_message=f"Error validating row {lineno} of {p}: {e}",
                     )
 
-                jsonl_rows.append(JsonlRowLoadResult(path=p, row=parsed))
+                jsonl_rows.append(JsonlRowLoadResult(path=p, value=parsed))
         except FileNotFoundError as e:
             raise LoadingError(
                 original_exception=e, error_message=f"Error reading file {p}: {e}"
