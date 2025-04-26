@@ -89,14 +89,10 @@ class ImageFilesLoader:
             ImageFilesLoadResult: Object containing the directory path and loading results for each file
         """
         p = Path(path)
-        if not p.exists():
-            raise LoadingError(
-                original_exception=None, error_message=f"File not found: {p}"
-            )
         if not p.is_dir():
             raise LoadingError(
                 original_exception=None,
-                error_message=f"Input path is file path: {p}",
+                error_message=f"Input path is invalid: {p}",
             )
 
         image_file_paths: List[Path] = (

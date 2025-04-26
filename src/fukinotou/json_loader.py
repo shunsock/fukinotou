@@ -61,12 +61,10 @@ class JsonLoader(Generic[T]):
                           or the content fails validation
         """
         p = Path(path)
-        if not p.exists():
-            raise LoadingError(
-                original_exception=None, error_message=f"File not found: {path}"
-            )
         if not p.is_file():
-            raise ValueError(f"Input path is directory path: {path}")
+            raise LoadingError(
+                original_exception=None, error_message=f"Input path is invalid: {path}"
+            )
 
         try:
             f = p.open("r", encoding="utf-8")
@@ -188,10 +186,6 @@ class JsonsLoader(Generic[T]):
             LoadingError: If the directory doesn't exist or is not a directory or validation failed
         """
         d = Path(directory_path)
-        if not d.exists():
-            raise LoadingError(
-                original_exception=None, error_message=f"Directory not found: {d}"
-            )
         if not d.is_dir():
             raise LoadingError(
                 original_exception=None,

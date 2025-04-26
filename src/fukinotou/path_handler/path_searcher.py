@@ -6,7 +6,7 @@ class PathSearcher:
     @staticmethod
     def search_file_paths_from_directory_path(path: Path) -> List[Path]:
         """
-        Search for all files in a directory and its subdirectories.
+        Search for all files in a directory.
 
         Args:
             path: The directory path to search
@@ -24,10 +24,6 @@ class PathSearcher:
         for item in path.iterdir():
             if item.is_file():
                 file_paths.append(item)
-            elif item.is_dir():
-                file_paths.extend(
-                    PathSearcher.search_file_paths_from_directory_path(item)
-                )
 
         return file_paths
 

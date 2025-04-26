@@ -120,10 +120,8 @@ class JsonlLoader(Generic[T]):
                           or contains rows that fail validation
         """
         p = Path(path)
-        if not p.exists():
-            raise LoadingError(f"File not found: {p}")
         if not p.is_file():
-            raise LoadingError(f"Input path is a directory: {p}")
+            raise LoadingError(f"Input path is invalid: {p}")
 
         jsonl_rows: List[JsonlRowLoadResult[T]] = []
         try:
