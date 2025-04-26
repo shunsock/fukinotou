@@ -2,10 +2,10 @@ from pathlib import Path
 from typing import List, Type, TypeVar, Generic
 
 import json
-import pandas
-import polars
+
 from pydantic import BaseModel, ValidationError
 
+from .dataframe_exportable import DataframeExportable
 from .load_error import LoadingError
 from .path_handler.path_searcher import PathSearcher
 
@@ -83,71 +83,16 @@ class JsonLoader(Generic[T]):
         return JsonLoadResult(path=p, value=parsed)
 
 
-class JsonsLoadResult(BaseModel, Generic[T]):
+class JsonsLoadResult(BaseModel, Generic[T], DataframeExportable):
     """Model representing the result of loading multiple JSON files.
 
     Attributes:
-        directory_path: Path to the directory from which files were loaded
+        path: Path to the directory from which files were loaded
         value: List of JSON load results, each containing a model instance
     """
 
-    directory_path: Path
+    path: Path
     value: List[JsonLoadResult[T]]
-
-    def to_polars(self, include_path_as_column: bool = False) -> polars.DataFrame:
-        """Convert the loaded json files to a Polars DataFrame.
-
-        This method converts all model instances in the result to a Polars DataFrame.
-        Each row in the DataFrame represents one model instance.
-
-        Args:
-            include_path_as_column: If True, adds a 'path' column with the file path
-                                   for each row. Default is False.
-
-        Returns:
-            Polars DataFrame containing the model data
-        """
-        # Return an empty DataFrame if there are no rows
-        if not self.value:
-            return polars.DataFrame()
-
-        data_dicts = []
-        for row in self.value:
-            data_dict = row.value.model_dump()
-            if include_path_as_column:
-                data_dict["path"] = str(row.path)
-            data_dicts.append(data_dict)
-        df = polars.DataFrame(data_dicts)
-
-        return df
-
-    def to_pandas(self, include_path_as_column: bool = False) -> pandas.DataFrame:
-        """Convert the loaded json files to a Pandas DataFrame.
-
-        This method converts all model instances in the result to a Pandas DataFrame.
-        Each row in the DataFrame represents one model instance.
-
-        Args:
-            include_path_as_column: If True, adds a 'path' column with the file path
-                                   for each row. Default is False.
-
-        Returns:
-            Pandas DataFrame containing the model data
-        """
-
-        # Return an empty DataFrame if there are no rows
-        if not self.value:
-            return pandas.DataFrame()
-
-        data_dicts = []
-        for row in self.value:
-            data_dict = row.value.model_dump()
-            if include_path_as_column:
-                data_dict["path"] = str(row.path)
-            data_dicts.append(data_dict)
-        df = pandas.DataFrame(data_dicts)
-
-        return df
 
 
 class JsonsLoader(Generic[T]):
@@ -205,4 +150,4 @@ class JsonsLoader(Generic[T]):
             loader.load(json_file) for json_file in json_files
         ]
 
-        return JsonsLoadResult(directory_path=d, value=results)
+        return JsonsLoadResult(path=d, value=results)
