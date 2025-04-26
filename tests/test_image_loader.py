@@ -10,7 +10,7 @@ from fukinotou.load_error import LoadingError
 
 def test_image_file_loader():
     """Test loading a single image file."""
-    test_file = Path(os.path.dirname(os.path.abspath(__file__))) / "example.jpg"
+    test_file = Path(os.path.dirname(os.path.abspath(__file__))) / "image/example.jpg"
 
     result = ImageFileLoader.load(path=test_file)
 
@@ -27,14 +27,14 @@ def test_image_file_loader_not_found():
 
 def test_image_file_loader_is_directory():
     """Test error when path is a directory."""
-    dir_path = Path(os.path.dirname(os.path.abspath(__file__)))
+    dir_path = Path(os.path.dirname(os.path.abspath(__file__))) / "image"
     with pytest.raises(LoadingError):
         ImageFileLoader.load(path=dir_path)
 
 
 def test_image_files_loader():
     """Test loading multiple image files from directory."""
-    dir_path = Path(os.path.dirname(os.path.abspath(__file__)))
+    dir_path = Path(os.path.dirname(os.path.abspath(__file__))) / "image"
 
     result = ImageFilesLoader.load(path=dir_path, extensions=[".jpg"])
 
@@ -56,6 +56,6 @@ def test_image_files_loader_not_found():
 
 def test_image_files_loader_is_file():
     """Test error when path is a file."""
-    test_file = Path(os.path.dirname(os.path.abspath(__file__))) / "example.jpg"
+    test_file = Path(os.path.dirname(os.path.abspath(__file__))) / "image/example.jpg"
     with pytest.raises(LoadingError):
         ImageFilesLoader.load(path=test_file, extensions=[".jpg"])
