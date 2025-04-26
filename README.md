@@ -61,24 +61,26 @@ pip install git+https://github.com/shunsock/fukinotou.git
 You can load CSV files using `CsvLoader`. It will automatically validate the data against the provided Pydantic model.
 
 ```python
-from fukinotou import CsvLoader, CsvLoadResult
+from fukinotou import CsvLoader, CsvLoaded
 from pydantic import BaseModel
 import polars
 import pandas
 
+
 class User(BaseModel):
-    id: int
-    name: str
-    age: int
+   id: int
+   name: str
+   age: int
+
 
 try:
-   users: CsvLoadResult[User]  = CsvLoader("./data.csv", User).load()
+   users: CsvLoaded[User] = CsvLoader("./data.csv", User).load()
    polars_df: polars.DataFrame = users.to_polars(include_path_as_column=False)
    print(polars_df)
    pandas_df: pandas.DataFrame = users.to_pandas(include_path_as_column=True)
    print(pandas_df)
 except FileNotFoundError as e:
-    print(f"Error loading data at reading phase: {e}")
+   print(f"Error loading data at reading phase: {e}")
 except ValueError as e:
    print(f"Error loading data at validation phase: {e}")
 ```
@@ -107,34 +109,34 @@ shape: (3, 3)
 
 ```python
 from fukinotou.text_file_loader import (
-    TextFileLoadResult,
-    TextFileLoader,
-    TextFilesLoadResult, # read files under directory at once
-    TextFilesLoader,
+   TextFileLoaded,
+   TextFileLoader,
+   TextFilesLoaded,  # read files under directory at once
+   TextFilesLoader,
 )
 from fukinotou.json_loader import (
-    JsonLoadResult,
-    JsonLoader,
-    JsonsLoadResult, # read files under directory at once
-    JsonsLoader,
+   JsonLoaded,
+   JsonLoader,
+   JsonsLoaded,  # read files under directory at once
+   JsonsLoader,
 )
 from fukinotou.jsonl_loader import (
-    JsonlLoadResult,
-    JsonlLoader,
+   JsonlLoaded,
+   JsonlLoader,
 )
 from fukinotou.csv_loader import (
-    CsvLoadResult,
-    CsvLoader,
+   CsvLoaded,
+   CsvLoader,
 )
 from fukinotou.parquet_loader import (
-    ParquetLoadResult,
-    ParquetLoader,
+   ParquetLoaded,
+   ParquetLoader,
 )
 from fukinotou.image_loader import (
-   ImageFileLoadResult,
-   ImageFileLoader,
-   ImageFilesLoadResult,
-   ImageFilesLoader,
+   ImageLoaded,
+   ImageLoader,
+   ImagesLoaded,
+   ImagesLoader,
 )
 ```
 

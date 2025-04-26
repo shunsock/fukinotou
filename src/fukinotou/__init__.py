@@ -1,51 +1,53 @@
 from fukinotou.text_file_loader import (
-    TextFileLoadResult,
+    TextFileLoaded,
     TextFileLoader,
-    TextFilesLoadResult,
+    TextFilesLoaded,
     TextFilesLoader,
 )
 from fukinotou.json_loader import (
-    JsonLoadResult,
+    JsonLoaded,
     JsonLoader,
-    JsonsLoadResult,
+    JsonsLoaded,
     JsonsLoader,
 )
 from fukinotou.jsonl_loader import (
-    JsonlLoadResult,
+    JsonlLoaded,
     JsonlLoader,
 )
 from fukinotou.csv_loader import (
-    CsvLoadResult,
+    CsvLoaded,
     CsvLoader,
 )
 from fukinotou.parquet_loader import (
-    ParquetLoadResult,
+    ParquetLoaded,
     ParquetLoader,
 )
 from fukinotou.image_loader import (
-    ImageFileLoadResult,
-    ImageFileLoader,
-    ImageFilesLoadResult,
-    ImageFilesLoader,
+    ImageLoaded,
+    ImageLoader,
+    ImagesLoaded,
+    ImagesLoader,
 )
+from fukinotou.load_error import LoadingError
 
 __all__ = [
-    "CsvLoadResult",
+    "LoadingError",
+    "CsvLoaded",
     "CsvLoader",
-    "ImageFileLoadResult",
-    "ImageFileLoader",
-    "ImageFilesLoadResult",
-    "ImageFilesLoader",
+    "ImageLoaded",
+    "ImageLoader",
+    "ImagesLoaded",
+    "ImagesLoader",
+    "JsonLoaded",
     "JsonLoader",
-    "JsonLoadResult",
-    "JsonsLoadResult",
-    "JsonsLoader",
-    "JsonlLoadResult",
+    "JsonlLoaded",
     "JsonlLoader",
-    "ParquetLoadResult",
+    "JsonsLoaded",
+    "JsonsLoader",
+    "ParquetLoaded",
     "ParquetLoader",
-    "TextFileLoadResult",
+    "TextFileLoaded",
     "TextFileLoader",
-    "TextFilesLoadResult",
+    "TextFilesLoaded",
     "TextFilesLoader",
 ]

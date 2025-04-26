@@ -10,7 +10,7 @@ from .dataframe_exportable import DataframeExportable
 T = TypeVar("T", bound=BaseModel)
 
 
-class CsvRowLoadResult(BaseModel, Generic[T]):
+class CsvRow(BaseModel, Generic[T]):
     """Model representing a single row loaded from a CSV file.
 
     Attributes:
@@ -22,16 +22,16 @@ class CsvRowLoadResult(BaseModel, Generic[T]):
     value: T
 
 
-class CsvLoadResult(BaseModel, Generic[T], DataframeExportable):
+class CsvLoaded(BaseModel, Generic[T], DataframeExportable):
     """Model representing the result of loading an entire CSV file.
 
     Attributes:
         path: Path to the loaded file
-        value: List of row results
+        value: List of rows
     """
 
     path: Path
-    value: List[CsvRowLoadResult[T]]
+    value: List[CsvRow[T]]
 
 
 class CsvLoader(Generic[T]):
@@ -52,7 +52,7 @@ class CsvLoader(Generic[T]):
         """
         self.model = model
 
-    def load(self, path: str | Path, encoding: str = "utf-8") -> CsvLoadResult[T]:
+    def load(self, path: str | Path, encoding: str = "utf-8") -> CsvLoaded[T]:
         """Load and validate data from a CSV file.
 
         Reads a CSV file, validates each row against the provided model class,
@@ -75,7 +75,7 @@ class CsvLoader(Generic[T]):
         if not p.is_file():
             raise LoadingError(f"Input path is invalid: {p}")
 
-        csv_rows: List[CsvRowLoadResult[T]] = []
+        csv_rows: List[CsvRow[T]] = []
         try:
             f = p.open("r", encoding=encoding)
             reader = csv.reader(f)
@@ -108,10 +108,10 @@ class CsvLoader(Generic[T]):
                         error_message=f"Error parsing row {row_number} in {p}: {e}",
                     )
 
-                csv_rows.append(CsvRowLoadResult(path=p, value=model_instance))
+                csv_rows.append(CsvRow(path=p, value=model_instance))
         except Exception as e:
             raise LoadingError(
                 original_exception=e, error_message=f"Error reading file {p}: {e}"
             )
 
-        return CsvLoadResult(path=p, value=csv_rows)
+        return CsvLoaded(path=p, value=csv_rows)

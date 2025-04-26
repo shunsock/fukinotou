@@ -8,7 +8,7 @@ from .load_error import LoadingError
 from .path_handler.path_searcher import PathSearcher
 
 
-class ImageFileLoadResult(BaseModel):
+class ImageLoaded(BaseModel):
     """
     Model representing the result of loading a image file.
 
@@ -23,7 +23,20 @@ class ImageFileLoadResult(BaseModel):
     value: Image.Image
 
 
-class ImageFileLoader:
+class ImagesLoaded(BaseModel):
+    """
+    Model representing the result of loading multiple image files.
+
+    Attributes:
+        path: Path to the source directory
+        value: List of results for each loaded file
+    """
+
+    path: Path
+    value: List[ImageLoaded]
+
+
+class ImageLoader:
     """
     Loader for a single image file.
 
@@ -31,12 +44,12 @@ class ImageFileLoader:
     """
 
     @staticmethod
-    def load(path: str | Path) -> ImageFileLoadResult:
+    def load(path: str | Path) -> ImageLoaded:
         """
         Load the content of the file.
 
         Returns:
-            ImageFileLoadResult: Result object containing the file path and its content
+            ImageLoaded: Result object containing the file path and its content
         """
         p = Path(path)
         if not Path(p).exists():
@@ -50,7 +63,7 @@ class ImageFileLoader:
             )
         try:
             image = Image.open(p)
-            return ImageFileLoadResult(
+            return ImageLoaded(
                 path=p,
                 value=image,
             )
@@ -60,20 +73,7 @@ class ImageFileLoader:
             )
 
 
-class ImageFilesLoadResult(BaseModel):
-    """
-    Model representing the result of loading multiple image files.
-
-    Attributes:
-        path: Path to the source directory
-        value: List of results for each loaded file
-    """
-
-    path: Path
-    value: List[ImageFileLoadResult]
-
-
-class ImageFilesLoader:
+class ImagesLoader:
     """
     Loader for multiple image files in a directory.
 
@@ -81,12 +81,12 @@ class ImageFilesLoader:
     """
 
     @staticmethod
-    def load(path: str | Path, extensions: List[str]) -> ImageFilesLoadResult:
+    def load(path: str | Path, extensions: List[str]) -> ImagesLoaded:
         """
         Load all image files in the directory.
 
         Returns:
-            ImageFilesLoadResult: Object containing the directory path and loading results for each file
+            ImagesLoaded: Object containing the directory path and loading results for each file
         """
         p = Path(path)
         if not p.is_dir():
@@ -101,10 +101,10 @@ class ImageFilesLoader:
             )
         )
 
-        results: List[ImageFileLoadResult] = [
-            ImageFileLoader().load(image_file) for image_file in image_file_paths
+        results: List[ImageLoaded] = [
+            ImageLoader().load(image_file) for image_file in image_file_paths
         ]
-        return ImageFilesLoadResult(
+        return ImagesLoaded(
             path=p,
             value=results,
         )
