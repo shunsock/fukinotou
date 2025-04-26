@@ -1,0 +1,6 @@
+{
+  "name": "Example 3",
+  "values": [100, 200, 300],
+  "nested": {"key": "value3"},
+  "id": 3
+}

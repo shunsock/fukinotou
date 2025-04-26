@@ -128,7 +128,7 @@ class CsvLoader(Generic[T]):
 
         csv_rows: List[CsvRowLoadResult[T]] = []
         try:
-            f =  p.open("r", encoding=encoding)
+            f = p.open("r", encoding=encoding)
             reader = csv.reader(f)
 
             # Header is required

@@ -1,6 +1,3 @@
-import json
-import os
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -13,6 +10,7 @@ from fukinotou.json_loader import (
     JsonsLoader,
     JsonLoadResult,
     JsonsLoadResult,
+    LoadingError,
 )
 
 
@@ -26,27 +24,26 @@ class _TestModel(BaseModel):
 
 
 class TestJsonLoader:
-    def test_init_with_nonexistent_file(self) -> None:
+    def test_load_nonexistent_file(self) -> None:
         """
-        Test that JsonLoader initialization raises FileNotFoundError when file doesn't exist.
+        Test that JsonLoader.load() raises LoadingError when file doesn't exist.
 
         This test verifies that an appropriate exception is raised when trying to
-        initialize a JsonLoader with a path that doesn't exist on the file system.
+        load a JSON file with a path that doesn't exist on the file system.
 
-        Expected: FileNotFoundError with message containing "File not found"
+        Expected: LoadingError with message containing "File not found"
         """
         # Arrange
-        non_existent_path = Path("/path/to/nonexistent/file.json")
+        non_existent_path = Path(__file__).parent / "json" / "nonexistent.json"
+        loader = JsonLoader(_TestModel)
 
         # Act & Assert
-        with pytest.raises(FileNotFoundError) as excinfo:
-            JsonLoader(non_existent_path, _TestModel)
+        with pytest.raises(LoadingError, match="File not found"):
+            loader.load(non_existent_path)
 
-        assert "File not found" in str(excinfo.value)
-
-    def test_init_with_directory_path(self) -> None:
+    def test_load_directory_path(self) -> None:
         """
-        Test that JsonLoader initialization raises ValueError when given a directory path.
+        Test that JsonLoader.load() raises ValueError when given a directory path.
 
         This test verifies that the loader correctly identifies when a provided path
         points to a directory rather than a file and raises an appropriate exception.
@@ -54,101 +51,116 @@ class TestJsonLoader:
         Expected: ValueError with message containing "Input path is directory path"
         """
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            dir_path = Path(temp_dir)
+        dir_path = Path(__file__).parent / "json"
+        loader = JsonLoader(_TestModel)
 
-            # Act & Assert
-            with pytest.raises(ValueError) as excinfo:
-                JsonLoader(dir_path, _TestModel)
-
-            assert "Input path is directory path" in str(excinfo.value)
+        # Act & Assert
+        with pytest.raises(ValueError, match="Input path is directory path"):
+            loader.load(dir_path)
 
     def test_load_json_file_successfully(self) -> None:
         """
         Test that JsonLoader.load() correctly reads and returns the file content.
 
-        This test creates a temporary JSON file with known content, loads it using
-        JsonLoader, and verifies that the result contains the correct file path
-        and exact file content as a Python dictionary.
+        This test loads a real JSON file with known content using JsonLoader,
+        and verifies that the result contains the correct file path and
+        exact file content as a Python dictionary.
 
         Expected: JsonLoadResult instance with matching path and content values
         """
         # Arrange
-        expected_content = {
-            "name": "test",
-            "values": [1, 2, 3],
-            "nested": {"key": "value"},
-        }
+        test_file_path = Path(__file__).parent / "json" / "file1.json"
+        loader = JsonLoader(_TestModel)
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as temp_file:
-            json.dump(expected_content, temp_file)
-            temp_path = Path(temp_file.name)
+        # Act
+        result = loader.load(test_file_path)
 
-        try:
-            loader = JsonLoader(temp_path, _TestModel)
+        # Assert
+        assert isinstance(result, JsonLoadResult)
+        assert result.path == test_file_path
 
-            # Act
-            result = loader.load()
+        # Check model fields match expected content
+        assert result.value.name == "Example 1"
+        assert result.value.values == [1, 2, 3]
+        assert result.value.nested == {"key": "value1"}
+        assert result.value.id == 1
 
-            # Assert
-            assert isinstance(result, JsonLoadResult)
-            assert result.path == temp_path
+    def test_load_invalid_json_schema(self) -> None:
+        """
+        Test that JsonLoader.load() raises LoadingError when JSON doesn't match schema.
 
-            # Check model fields match expected content
-            assert result.value.name == expected_content["name"]
-            assert result.value.values == expected_content["values"]
-            assert result.value.nested == expected_content["nested"]
-        finally:
-            # Clean up
-            os.unlink(temp_path)
+        This test verifies that the loader correctly detects when JSON content
+        doesn't match the expected schema and raises an appropriate exception.
+
+        Expected: LoadingError with message containing "Error validating"
+        """
+        # Arrange
+        invalid_file_path = Path(__file__).parent / "json" / "invalid.json"
+        loader = JsonLoader(_TestModel)
+
+        # Act & Assert
+        with pytest.raises(LoadingError, match="Error validating"):
+            loader.load(invalid_file_path)
+
+    def test_load_broken_json_syntax(self) -> None:
+        """
+        Test that JsonLoader.load() raises LoadingError when JSON has syntax errors.
+
+        This test verifies that the loader correctly detects when a file contains
+        invalid JSON syntax and raises an appropriate exception.
+
+        Expected: LoadingError with message containing "Error parsing JSON file"
+        """
+        # Arrange
+        broken_file_path = Path(__file__).parent / "json" / "broken.json"
+        loader = JsonLoader(_TestModel)
+
+        # Act & Assert
+        with pytest.raises(LoadingError, match="Error parsing JSON file"):
+            loader.load(broken_file_path)
 
 
 class TestJsonsLoader:
-    def test_init_with_nonexistent_directory(self) -> None:
+    def test_load_nonexistent_directory(self) -> None:
         """
-        Test that JsonsLoader initialization raises FileNotFoundError when directory doesn't exist.
+        Test that JsonsLoader.load() raises LoadingError when directory doesn't exist.
 
         This test verifies that an appropriate exception is raised when trying to
-        initialize a JsonsLoader with a directory path that doesn't exist.
+        load JSON files from a directory path that doesn't exist.
 
-        Expected: FileNotFoundError with message containing "Directory not found"
+        Expected: LoadingError with message containing "Directory not found"
         """
         # Arrange
-        non_existent_dir = Path("/path/to/nonexistent/directory")
+        non_existent_dir = Path(__file__).parent / "nonexistent_directory"
+        loader = JsonsLoader(_TestModel)
 
         # Act & Assert
-        with pytest.raises(FileNotFoundError) as excinfo:
-            JsonsLoader(non_existent_dir, _TestModel)
+        with pytest.raises(LoadingError, match="Directory not found"):
+            loader.load(non_existent_dir)
 
-        assert "Directory not found" in str(excinfo.value)
-
-    def test_init_with_file_path(self) -> None:
+    def test_load_file_path(self) -> None:
         """
-        Test that JsonsLoader initialization raises ValueError when given a file path.
+        Test that JsonsLoader.load() raises LoadingError when given a file path.
 
         This test verifies that the loader correctly identifies when a provided path
         points to a file rather than a directory and raises an appropriate exception.
 
-        Expected: ValueError with message containing "Input path is file path"
+        Expected: LoadingError with message containing "Input path is not directory"
         """
         # Arrange
-        with tempfile.NamedTemporaryFile(suffix=".json") as temp_file:
-            file_path = Path(temp_file.name)
+        file_path = Path(__file__).parent / "json" / "file1.json"
+        loader = JsonsLoader(_TestModel)
 
-            # Act & Assert
-            with pytest.raises(ValueError) as excinfo:
-                JsonsLoader(file_path, _TestModel)
-
-            assert "Input path is file path" in str(excinfo.value)
+        # Act & Assert
+        with pytest.raises(LoadingError, match="Input path is not directory"):
+            loader.load(file_path)
 
     def test_load_multiple_json_files(self) -> None:
         """
         Test that JsonsLoader.load() correctly loads all JSON files from a directory.
 
-        This test sets up a directory structure with multiple JSON files in both
-        the root and a subdirectory, along with a non-JSON file that should be ignored.
+        This test loads JSON files from a real directory structure with multiple files
+        in both the root and a subdirectory, along with a non-JSON file.
         It verifies that:
         1. All JSON files are loaded recursively
         2. Each file's content is parsed correctly
@@ -158,181 +170,126 @@ class TestJsonsLoader:
         Expected:
         - JsonsLoadResult instance with directory_path matching the input path
         - 5 JSON files loaded (3 in root, 2 in subdirectory)
-        - Each file's content matching what was written
+        - Each file's content matching what's in the actual files
         - XML file not included in the results
         """
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            dir_path = Path(temp_dir)
+        dir_path = Path(__file__).parent / "json"
+        loader = JsonsLoader(_TestModel)
 
-            # Create test files
-            file_contents = {
-                "file1.json": {"id": 1, "name": " 1"},
-                "file2.json": {"id": 2, "name": " 2"},
-                "file3.json": {"id": 3, "name": " 3"},
-                "non_json.xml": "<xml>This should be ignored</xml>",
-            }
+        # Act
+        result = loader.load(dir_path)
 
-            file_paths = {}
-            for filename, content in file_contents.items():
-                file_path = dir_path / filename
-                with open(file_path, "w", encoding="utf-8") as f:
-                    if filename.endswith(".json"):
-                        json.dump(content, f)
-                    else:
-                        f.write(content)
-                file_paths[filename] = file_path
+        # Assert
+        assert isinstance(result, JsonsLoadResult)
+        assert result.directory_path == dir_path
 
-            # Create a subdirectory with more JSON files
-            subdir_path = dir_path / "subdir"
-            subdir_path.mkdir()
+        # We should find 5 valid JSON files (3 in root dir, 2 in subdir)
+        # Note: broken.json and invalid.json will be skipped due to parsing/validation errors
+        valid_json_count = 5
+        assert len(result.value) == valid_json_count
 
-            subdir_contents = {
-                "subfile1.json": {"id": 4, "name": "Subdir  1"},
-                "subfile2.json": {"id": 5, "name": "Subdir  2"},
-            }
+        # Create a dictionary of loaded files by filename for easier assertions
+        loaded_files = {
+            result_item.path.name: result_item.value for result_item in result.value
+        }
 
-            for filename, content in subdir_contents.items():
-                file_path = subdir_path / filename
-                with open(file_path, "w", encoding="utf-8") as f:
-                    json.dump(content, f)
-                file_paths[f"subdir/{filename}"] = file_path
+        # Check that we loaded all expected JSON files with correct content
+        assert "file1.json" in loaded_files
+        assert loaded_files["file1.json"].id == 1
+        assert loaded_files["file1.json"].name == "Example 1"
 
-            # Act
-            loader = JsonsLoader(dir_path, _TestModel)
-            result = loader.load()
+        assert "file2.json" in loaded_files
+        assert loaded_files["file2.json"].id == 2
+        assert loaded_files["file2.json"].name == "Example 2"
 
-            # Assert
-            assert isinstance(result, JsonsLoadResult)
-            assert result.directory_path == dir_path
+        assert "file3.json" in loaded_files
+        assert loaded_files["file3.json"].id == 3
+        assert loaded_files["file3.json"].name == "Example 3"
 
-            # Should find 5 JSON files (3 in root dir, 2 in subdir)
-            assert len(result.value) == 5
+        assert "subfile1.json" in loaded_files
+        assert loaded_files["subfile1.json"].id == 4
+        assert loaded_files["subfile1.json"].name == "Subdir 1"
 
-            # Check that we loaded all JSON files with correct content
-            loaded_files = {
-                result_item.path.name: result_item.value for result_item in result.value
-            }
+        assert "subfile2.json" in loaded_files
+        assert loaded_files["subfile2.json"].id == 5
+        assert loaded_files["subfile2.json"].name == "Subdir 2"
 
-            assert "file1.json" in loaded_files
-            assert loaded_files["file1.json"].id == 1
-            assert loaded_files["file1.json"].name == " 1"
-
-            assert "file2.json" in loaded_files
-            assert loaded_files["file2.json"].id == 2
-            assert loaded_files["file2.json"].name == " 2"
-
-            assert "file3.json" in loaded_files
-            assert loaded_files["file3.json"].id == 3
-            assert loaded_files["file3.json"].name == " 3"
-
-            assert "subfile1.json" in loaded_files
-            assert loaded_files["subfile1.json"].id == 4
-            assert loaded_files["subfile1.json"].name == "Subdir  1"
-
-            assert "subfile2.json" in loaded_files
-            assert loaded_files["subfile2.json"].id == 5
-            assert loaded_files["subfile2.json"].name == "Subdir  2"
-
-            # Make sure XML file was not loaded
-            assert "non_json.xml" not in loaded_files
+        # Make sure non-JSON, broken and invalid files were not loaded
+        assert "non_json.xml" not in loaded_files
+        assert "broken.json" not in loaded_files
+        assert "invalid.json" not in loaded_files
 
     def test_jsons_load_result_to_polars(self) -> None:
         """
         Test that JsonsLoadResult.to_polars() correctly converts model instances to a Polars DataFrame.
 
-        This test verifies that the to_polars method correctly extracts data from multiple model instances
-        and creates a Polars DataFrame with the expected structure and content.
+        This test loads real JSON files, converts the results to a Polars DataFrame,
+        and verifies that the DataFrame has the expected structure and content.
 
         Expected: Polars DataFrame with rows matching the model instances
         """
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            dir_path = Path(temp_dir)
+        dir_path = Path(__file__).parent / "json"
+        loader = JsonsLoader(_TestModel)
 
-            # Create test files
-            file_contents = {
-                "file1.json": {"id": 1, "name": "Item 1"},
-                "file2.json": {"id": 2, "name": "Item 2"},
-                "file3.json": {"id": 3, "name": "Item 3"},
-            }
+        # Act
+        result = loader.load(dir_path)
 
-            for filename, content in file_contents.items():
-                file_path = dir_path / filename
-                with open(file_path, "w", encoding="utf-8") as f:
-                    json.dump(content, f)
+        # Convert to DataFrames
+        df = result.to_polars()
+        df_with_path = result.to_polars(include_path_as_column=True)
 
-            # Act
-            loader = JsonsLoader(dir_path, _TestModel)
-            result = loader.load()
+        # Assert
+        assert isinstance(df, polars.DataFrame)
+        assert len(df) == 5  # 5 valid JSON files
 
-            # Then convert to DataFrames
-            df = result.to_polars()
-            df_with_path = result.to_polars(include_path_as_column=True)
+        # Check column names
+        assert "id" in df.columns
+        assert "name" in df.columns
+        assert "path" not in df.columns
 
-            # Assert
-            assert isinstance(df, polars.DataFrame)
-            assert len(df) == 3  # Should have 3 rows
+        # Check values
+        ids = df.select("id").to_series().to_list()
+        assert sorted(ids) == [1, 2, 3, 4, 5]
 
-            # Check column names
-            assert "id" in df.columns
-            assert "name" in df.columns
-            assert "path" not in df.columns
-
-            # Check values
-            ids = df.select("id").to_series().to_list()
-            assert sorted(ids) == [1, 2, 3]
-
-            # Check with path column
-            assert "path" in df_with_path.columns
-            assert len(df_with_path.select("path").unique()) == 3  # 3 unique file paths
+        # Check with path column
+        assert "path" in df_with_path.columns
+        assert len(df_with_path.select("path").unique()) == 5  # 5 unique file paths
 
     def test_jsons_load_result_to_pandas(self) -> None:
         """
         Test that JsonsLoadResult.to_pandas() correctly converts model instances to a Pandas DataFrame.
 
-        This test verifies that the to_pandas method correctly extracts data from multiple model instances
-        and creates a Pandas DataFrame with the expected structure and content.
+        This test loads real JSON files, converts the results to a Pandas DataFrame,
+        and verifies that the DataFrame has the expected structure and content.
 
         Expected: Pandas DataFrame with rows matching the model instances
         """
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            dir_path = Path(temp_dir)
+        dir_path = Path(__file__).parent / "json"
+        loader = JsonsLoader(_TestModel)
 
-            # Create test files
-            file_contents = {
-                "file1.json": {"id": 1, "name": "Item 1"},
-                "file2.json": {"id": 2, "name": "Item 2"},
-                "file3.json": {"id": 3, "name": "Item 3"},
-            }
+        # Act
+        result = loader.load(dir_path)
 
-            for filename, content in file_contents.items():
-                file_path = dir_path / filename
-                with open(file_path, "w", encoding="utf-8") as f:
-                    json.dump(content, f)
+        # Convert to DataFrames
+        df = result.to_pandas()
+        df_with_path = result.to_pandas(include_path_as_column=True)
 
-            # Act
-            loader = JsonsLoader(dir_path, _TestModel)
-            result = loader.load()
+        # Assert
+        assert isinstance(df, pandas.DataFrame)
+        assert len(df) == 5  # 5 valid JSON files
 
-            # Then convert to DataFrames
-            df = result.to_pandas()
-            df_with_path = result.to_pandas(include_path_as_column=True)
+        # Check column names
+        assert "id" in df.columns
+        assert "name" in df.columns
+        assert "path" not in df.columns
 
-            # Assert
-            assert isinstance(df, pandas.DataFrame)
-            assert len(df) == 3  # Should have 3 rows
+        # Check values
+        ids = df["id"].tolist()
+        assert sorted(ids) == [1, 2, 3, 4, 5]
 
-            # Check column names
-            assert "id" in df.columns
-            assert "name" in df.columns
-            assert "path" not in df.columns
-
-            # Check values
-            ids = df["id"].tolist()
-            assert sorted(ids) == [1, 2, 3]
-
-            # Check with path column
-            assert "path" in df_with_path.columns
-            assert len(df_with_path["path"].unique()) == 3  # 3 unique file paths
+        # Check with path column
+        assert "path" in df_with_path.columns
+        assert len(df_with_path["path"].unique()) == 5  # 5 unique file paths
