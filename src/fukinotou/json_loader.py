@@ -5,7 +5,7 @@ import json
 
 from pydantic import BaseModel, ValidationError
 
-from .dataframe_exportable import DataframeExportable
+from .abstraction.dataframe_exportable import DataframeExportable
 from .exception.loading_exception import LoadingException
 from .path_handler.path_searcher import PathSearcher
 

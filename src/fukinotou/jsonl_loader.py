@@ -3,7 +3,7 @@ from typing import List, Type, TypeVar, Generic
 import json
 from pydantic import BaseModel, ValidationError
 
-from fukinotou.dataframe_exportable import DataframeExportable
+from fukinotou.abstraction.dataframe_exportable import DataframeExportable
 from fukinotou.exception.loading_exception import LoadingException
 
 T = TypeVar("T", bound=BaseModel)

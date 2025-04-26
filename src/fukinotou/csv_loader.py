@@ -5,7 +5,7 @@ from typing import Dict, List, Type, TypeVar, Generic
 from pydantic import BaseModel, ValidationError
 
 from .exception.loading_exception import LoadingException
-from .dataframe_exportable import DataframeExportable
+from .abstraction.dataframe_exportable import DataframeExportable
 
 T = TypeVar("T", bound=BaseModel)
 
