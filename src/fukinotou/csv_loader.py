@@ -160,7 +160,7 @@ class CsvLoader(Generic[T]):
                     )
 
                 csv_rows.append(CsvRowLoadResult(path=p, row=model_instance))
-        except FileNotFoundError as e:
+        except Exception as e:
             raise LoadingError(
                 original_exception=e, error_message=f"Error reading file {p}: {e}"
             )
