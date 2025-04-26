@@ -176,8 +176,7 @@ class JsonsLoader(Generic[T]):
 
         Scans a directory for JSON files, reads each file, validates its content
         against the provided model class, and returns a structured result containing
-        all the validated content. Files that fail to parse or validate are silently
-        skipped and not included in the results.
+        all the validated content. Files that fail to parse or validate are strictly prohibited.
 
         Args:
             directory_path: Path to the directory containing JSON files (string or Path object)
@@ -186,7 +185,7 @@ class JsonsLoader(Generic[T]):
             JsonsLoadResult containing all the successfully validated content as model instances
 
         Raises:
-            LoadingError: If the directory doesn't exist or is not a directory
+            LoadingError: If the directory doesn't exist or is not a directory or validation failed
         """
         d = Path(directory_path)
         if not d.exists():
@@ -206,17 +205,10 @@ class JsonsLoader(Generic[T]):
             )
         )
 
-        # Create JsonLoader for individual file loading
+        # Raise Error if we found any invalid rows
         loader = JsonLoader(model=self.model)
-        results: List[JsonLoadResult[T]] = []
-
-        # Try to load each file, skipping ones that fail validation
-        for json_file in json_files:
-            try:
-                result = loader.load(json_file)
-                results.append(result)
-            except LoadingError:
-                # Skip files that fail to load or validate
-                continue
+        results: List[JsonLoadResult[T]] = [
+            loader.load(json_file) for json_file in json_files
+        ]
 
         return JsonsLoadResult(directory_path=d, value=results)
