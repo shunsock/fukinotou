@@ -1,15 +1,12 @@
 from pathlib import Path
 
 import pytest
-import polars
-import pandas
 from pydantic import BaseModel, Field
 
 from fukinotou.json_loader import (
     JsonLoader,
     JsonsLoader,
     JsonLoadResult,
-    JsonsLoadResult,
     LoadingError,
 )
 
