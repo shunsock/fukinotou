@@ -65,11 +65,11 @@ class ImageFilesLoadResult(BaseModel):
     Model representing the result of loading multiple image files.
 
     Attributes:
-        directory_path: Path to the source directory
+        path: Path to the source directory
         value: List of results for each loaded file
     """
 
-    directory_path: Path
+    path: Path
     value: List[ImageFileLoadResult]
 
 
@@ -105,6 +105,6 @@ class ImageFilesLoader:
             ImageFileLoader().load(image_file) for image_file in image_file_paths
         ]
         return ImageFilesLoadResult(
-            directory_path=p,
+            path=p,
             value=results,
         )

@@ -2,11 +2,10 @@ import csv
 from pathlib import Path
 from typing import Dict, List, Type, TypeVar, Generic
 
-import polars
-import pandas
 from pydantic import BaseModel, ValidationError
 
 from .load_error import LoadingError
+from .dataframe_exportable import DataframeExportable
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -16,14 +15,14 @@ class CsvRowLoadResult(BaseModel, Generic[T]):
 
     Attributes:
         path: Path to the CSV file from which this row was loaded
-        row: The parsed and validated row data as a model instance
+        value: The parsed and validated row data as a model instance
     """
 
     path: Path
-    row: T
+    value: T
 
 
-class CsvLoadResult(BaseModel, Generic[T]):
+class CsvLoadResult(BaseModel, Generic[T], DataframeExportable):
     """Model representing the result of loading an entire CSV file.
 
     Attributes:
@@ -33,54 +32,6 @@ class CsvLoadResult(BaseModel, Generic[T]):
 
     path: Path
     value: List[CsvRowLoadResult[T]]
-
-    def to_polars(self, include_path_as_column: bool = False) -> polars.DataFrame:
-        """Convert the result to a Polars DataFrame.
-
-        This method converts all model instances in the result to a Polars DataFrame.
-        Each row in the DataFrame represents one model instance.
-
-        Args:
-            include_path_as_column: If True, adds a 'path' column with the file path
-                                    for each row. Default is False.
-
-        Returns:
-            Polars DataFrame containing the model data
-        """
-        if not self.value:
-            return polars.DataFrame()
-
-        data_dicts = [row.row.model_dump() for row in self.value]
-        df = polars.DataFrame(data_dicts)
-
-        if include_path_as_column:
-            df = df.with_columns(polars.lit(str(self.path)).alias("path"))
-
-        return df
-
-    def to_pandas(self, include_path_as_column: bool = False) -> pandas.DataFrame:
-        """Convert the result to a Pandas DataFrame.
-
-        This method converts all model instances in the result to a Pandas DataFrame.
-        Each row in the DataFrame represents one model instance.
-
-        Args:
-            include_path_as_column: If True, adds a 'path' column with the file path
-                                    for each row. Default is False.
-
-        Returns:
-            Pandas DataFrame containing the model data
-        """
-        if not self.value:
-            return pandas.DataFrame()
-
-        data_dicts = [row.row.model_dump() for row in self.value]
-        df = pandas.DataFrame(data_dicts)
-
-        if include_path_as_column:
-            df["path"] = str(self.path)
-
-        return df
 
 
 class CsvLoader(Generic[T]):
@@ -157,7 +108,7 @@ class CsvLoader(Generic[T]):
                         error_message=f"Error parsing row {row_number} in {p}: {e}",
                     )
 
-                csv_rows.append(CsvRowLoadResult(path=p, row=model_instance))
+                csv_rows.append(CsvRowLoadResult(path=p, value=model_instance))
         except Exception as e:
             raise LoadingError(
                 original_exception=e, error_message=f"Error reading file {p}: {e}"
