@@ -18,6 +18,7 @@ class CsvRowLoadResult(BaseModel, Generic[T]):
         path: Path to the CSV file from which this row was loaded
         row: The parsed and validated row data as a model instance
     """
+
     path: Path
     row: T
 
@@ -91,6 +92,7 @@ class CsvLoader(Generic[T]):
     Type Parameters:
         T: A Pydantic BaseModel subclass that defines the schema for CSV rows
     """
+
     def __init__(self, model: Type[T]) -> None:
         """Initialize the CSV loader with a target model class.
 
@@ -147,7 +149,7 @@ class CsvLoader(Generic[T]):
                 for i, header in enumerate(headers):
                     if i < len(row_data):
                         row_dict[header] = row_data[i]
-                
+
                 try:
                     model_instance = self.model(**row_dict)
                 except Exception as e:
