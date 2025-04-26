@@ -4,7 +4,7 @@ from typing import Dict, List, Type, TypeVar, Generic
 
 import polars
 import pandas
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from .load_error import LoadingError
 
@@ -121,10 +121,8 @@ class CsvLoader(Generic[T]):
                           or contains rows that fail validation
         """
         p = Path(path)
-        if not p.exists():
-            raise LoadingError(f"File not found: {p}")
         if not p.is_file():
-            raise LoadingError(f"Input path is a directory: {p}")
+            raise LoadingError(f"Input path is invalid: {p}")
 
         csv_rows: List[CsvRowLoadResult[T]] = []
         try:
@@ -152,8 +150,8 @@ class CsvLoader(Generic[T]):
                         row_dict[header] = row_data[i]
 
                 try:
-                    model_instance = self.model(**row_dict)
-                except Exception as e:
+                    model_instance = self.model.model_validate(row_dict)
+                except ValidationError as e:
                     raise LoadingError(
                         original_exception=e,
                         error_message=f"Error parsing row {row_number} in {p}: {e}",

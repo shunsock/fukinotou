@@ -83,7 +83,7 @@ def test_csv_loader_file_not_found():
     non_existent_path = Path(__file__).parent / "does_not_exist.csv"
 
     # Act & Assert
-    with pytest.raises(LoadingError, match="File not found"):
+    with pytest.raises(LoadingError, match="Input path is invalid"):
         loader.load(non_existent_path)
 
 
