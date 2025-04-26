@@ -127,7 +127,8 @@ class CsvLoader(Generic[T]):
             raise LoadingError(f"Input path is a directory: {p}")
 
         csv_rows: List[CsvRowLoadResult[T]] = []
-        with p.open("r", encoding=encoding) as f:
+        try:
+            f =  p.open("r", encoding=encoding)
             reader = csv.reader(f)
 
             # Header is required
@@ -159,5 +160,9 @@ class CsvLoader(Generic[T]):
                     )
 
                 csv_rows.append(CsvRowLoadResult(path=p, row=model_instance))
+        except FileNotFoundError as e:
+            raise LoadingError(
+                original_exception=e, error_message=f"Error reading file {p}: {e}"
+            )
 
         return CsvLoadResult(path=p, value=csv_rows)
