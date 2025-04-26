@@ -4,7 +4,7 @@ from typing import List
 from pydantic import BaseModel, ConfigDict
 from PIL import Image
 
-from .exception.loading_error import LoadingError
+from .exception.loading_exception import LoadingException
 from .path_handler.path_searcher import PathSearcher
 
 
@@ -53,11 +53,11 @@ class ImageLoader:
         """
         p = Path(path)
         if not Path(p).exists():
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=None, error_message=f"File not found: {p}"
             )
         if not Path(p).is_file():
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=None,
                 error_message=f"Input path is directory path: {p}",
             )
@@ -68,7 +68,7 @@ class ImageLoader:
                 value=image,
             )
         except Exception as e:
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=e, error_message=f"Error reading file {p}: {e}"
             )
 
@@ -90,7 +90,7 @@ class ImagesLoader:
         """
         p = Path(path)
         if not p.is_dir():
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=None,
                 error_message=f"Input path is invalid: {p}",
             )

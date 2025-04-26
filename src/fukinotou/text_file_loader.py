@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from .exception.loading_error import LoadingError
+from .exception.loading_exception import LoadingException
 from .path_handler.path_searcher import PathSearcher
 
 
@@ -50,7 +50,7 @@ class TextFileLoader:
         """
         p = Path(path)
         if not p.is_file():
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=None,
                 error_message=f"Input path is invalid: {path}",
             )
@@ -61,7 +61,7 @@ class TextFileLoader:
                 value=content,
             )
         except Exception as e:
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=e, error_message=f"Error reading file {path}: {e}"
             )
 
@@ -83,7 +83,7 @@ class TextFilesLoader:
         """
         p = Path(path)
         if not p.is_dir():
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=None,
                 error_message=f"Input path is invalid: {path}",
             )

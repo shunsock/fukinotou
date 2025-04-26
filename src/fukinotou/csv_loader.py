@@ -4,7 +4,7 @@ from typing import Dict, List, Type, TypeVar, Generic
 
 from pydantic import BaseModel, ValidationError
 
-from .exception.loading_error import LoadingError
+from .exception.loading_exception import LoadingException
 from .dataframe_exportable import DataframeExportable
 
 T = TypeVar("T", bound=BaseModel)
@@ -73,7 +73,7 @@ class CsvLoader(Generic[T]):
         """
         p = Path(path)
         if not p.is_file():
-            raise LoadingError(f"Input path is invalid: {p}")
+            raise LoadingException(f"Input path is invalid: {p}")
 
         csv_rows: List[CsvRow[T]] = []
         try:
@@ -84,7 +84,7 @@ class CsvLoader(Generic[T]):
             try:
                 headers = next(reader)
             except StopIteration:
-                raise LoadingError(
+                raise LoadingException(
                     original_exception=None, error_message=f"No headers found in {p}"
                 )
 
@@ -103,14 +103,14 @@ class CsvLoader(Generic[T]):
                 try:
                     model_instance = self.model.model_validate(row_dict)
                 except ValidationError as e:
-                    raise LoadingError(
+                    raise LoadingException(
                         original_exception=e,
                         error_message=f"Error parsing row {row_number} in {p}: {e}",
                     )
 
                 csv_rows.append(CsvRow(path=p, value=model_instance))
         except Exception as e:
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=e, error_message=f"Error reading file {p}: {e}"
             )
 

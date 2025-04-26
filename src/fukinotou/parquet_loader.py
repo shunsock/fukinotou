@@ -5,7 +5,7 @@ from typing import List, Type, TypeVar, Generic
 from pydantic import BaseModel, ValidationError
 
 from fukinotou.dataframe_exportable import DataframeExportable
-from fukinotou.exception.loading_error import LoadingError
+from fukinotou.exception.loading_exception import LoadingException
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -65,7 +65,7 @@ class ParquetLoader(Generic[T]):
         """
         p = Path(path)
         if not p.is_file():
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=None, error_message=f"Input path is invalid: {p}"
             )
 
@@ -73,7 +73,7 @@ class ParquetLoader(Generic[T]):
         try:
             df = pl.read_parquet(p)
         except Exception as e:
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=e,
                 error_message=f"Error reading Parquet file {p}: {e}",
             )
@@ -84,7 +84,7 @@ class ParquetLoader(Generic[T]):
             try:
                 model_instance = self.model.model_validate(cleaned_dict)
             except ValidationError as e:
-                raise LoadingError(
+                raise LoadingException(
                     original_exception=e,
                     error_message=f"Error validating row in {p}: {e}",
                 )

@@ -6,7 +6,7 @@ import json
 from pydantic import BaseModel, ValidationError
 
 from .dataframe_exportable import DataframeExportable
-from .exception.loading_error import LoadingError
+from .exception.loading_exception import LoadingException
 from .path_handler.path_searcher import PathSearcher
 
 T = TypeVar("T", bound=BaseModel)
@@ -74,7 +74,7 @@ class JsonLoader(Generic[T]):
         """
         p = Path(path)
         if not p.is_file():
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=None, error_message=f"Input path is invalid: {path}"
             )
 
@@ -83,12 +83,12 @@ class JsonLoader(Generic[T]):
             raw = json.load(f)
             parsed = self.model.model_validate(raw)
         except json.JSONDecodeError as e:
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=e,
                 error_message=f"Error parsing JSON file {path}: {e}",
             )
         except ValidationError as e:
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=e,
                 error_message=f"Error validating JSON file {path}: {e}",
             )
@@ -132,7 +132,7 @@ class JsonsLoader(Generic[T]):
         """
         d = Path(directory_path)
         if not d.is_dir():
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=None,
                 error_message=f"Input path is not directory: {d}",
             )

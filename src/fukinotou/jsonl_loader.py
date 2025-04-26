@@ -4,7 +4,7 @@ import json
 from pydantic import BaseModel, ValidationError
 
 from fukinotou.dataframe_exportable import DataframeExportable
-from fukinotou.exception.loading_error import LoadingError
+from fukinotou.exception.loading_exception import LoadingException
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -72,7 +72,7 @@ class JsonlLoader(Generic[T]):
         """
         p = Path(path)
         if not p.is_file():
-            raise LoadingError(f"Input path is invalid: {p}")
+            raise LoadingException(f"Input path is invalid: {p}")
 
         jsonl_rows: List[JsonlRow[T]] = []
         try:
@@ -89,19 +89,19 @@ class JsonlLoader(Generic[T]):
                     obj = json.loads(raw)
                     parsed: T = self.model.model_validate(obj)
                 except json.JSONDecodeError as e:
-                    raise LoadingError(
+                    raise LoadingException(
                         original_exception=e,
                         error_message=f"Error parsing JSON on line {lineno} of {p}: {e}",
                     )
                 except ValidationError as e:
-                    raise LoadingError(
+                    raise LoadingException(
                         original_exception=e,
                         error_message=f"Error validating row {lineno} of {p}: {e}",
                     )
 
                 jsonl_rows.append(JsonlRow(path=p, value=parsed))
         except FileNotFoundError as e:
-            raise LoadingError(
+            raise LoadingException(
                 original_exception=e, error_message=f"Error reading file {p}: {e}"
             )
 

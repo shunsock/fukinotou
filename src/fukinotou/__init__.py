@@ -28,10 +28,10 @@ from fukinotou.image_loader import (
     ImagesLoaded,
     ImagesLoader,
 )
-from fukinotou.exception.loading_error import LoadingError
+from fukinotou.exception.loading_exception import LoadingException
 
 __all__ = [
-    "LoadingError",
+    "LoadingException",
     "CsvLoaded",
     "CsvLoader",
     "ImageLoaded",
