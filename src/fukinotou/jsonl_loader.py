@@ -4,7 +4,7 @@ import json
 from pydantic import BaseModel, ValidationError
 
 from fukinotou.dataframe_exportable import DataframeExportable
-from fukinotou.load_error import LoadingError
+from fukinotou.exception.loading_error import LoadingError
 
 T = TypeVar("T", bound=BaseModel)
 

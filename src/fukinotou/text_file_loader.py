@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from .load_error import LoadingError
+from .exception.loading_error import LoadingError
 from .path_handler.path_searcher import PathSearcher
 
 

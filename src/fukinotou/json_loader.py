@@ -6,7 +6,7 @@ import json
 from pydantic import BaseModel, ValidationError
 
 from .dataframe_exportable import DataframeExportable
-from .load_error import LoadingError
+from .exception.loading_error import LoadingError
 from .path_handler.path_searcher import PathSearcher
 
 T = TypeVar("T", bound=BaseModel)

@@ -28,7 +28,7 @@ from fukinotou.image_loader import (
     ImagesLoaded,
     ImagesLoader,
 )
-from fukinotou.load_error import LoadingError
+from fukinotou.exception.loading_error import LoadingError
 
 __all__ = [
     "LoadingError",
