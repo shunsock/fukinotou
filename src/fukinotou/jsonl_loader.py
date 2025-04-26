@@ -3,22 +3,35 @@ from typing import List, Type, TypeVar, Generic
 import polars
 import pandas
 import json
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+
+from fukinotou.load_error import LoadingError
 
 T = TypeVar("T", bound=BaseModel)
 
 
-class JsonlLoadResult(BaseModel, Generic[T]):
-    """
-    Model representing the result of loading a JSONL file.
+class JsonlRowLoadResult(BaseModel, Generic[T]):
+    """Model representing a single row loaded from a JSONL file.
 
     Attributes:
-        path: Path to the loaded file
-        values: List of parsed model instances (one per line)
+        path: Path to the JSONL file from which this row was loaded
+        row: The parsed and validated row data as a model instance
     """
 
     path: Path
-    values: List[T]
+    row: T
+
+
+class JsonlLoadResult(BaseModel, Generic[T]):
+    """Model representing the result of loading an entire JSONL file.
+
+    Attributes:
+        path: Path to the loaded file
+        value: List of row results
+    """
+
+    path: Path
+    value: List[JsonlRowLoadResult[T]]
 
     def to_polars(self, include_path_as_column: bool = False) -> polars.DataFrame:
         """Convert the result to a Polars DataFrame.
@@ -33,20 +46,14 @@ class JsonlLoadResult(BaseModel, Generic[T]):
         Returns:
             Polars DataFrame containing the model data
         """
-        if not self.values:
-            # Return an empty DataFrame if there are no rows
+        if not self.value:
             return polars.DataFrame()
 
-        # Convert each model to a dict
-        data_dicts = [row.model_dump() for row in self.values]
-
-        # Create a DataFrame from the list of dicts
+        data_dicts = [row.row.model_dump() for row in self.value]
         df = polars.DataFrame(data_dicts)
 
-        # Add path column if requested
         if include_path_as_column:
-            path_str = str(self.path)
-            df = df.with_columns(polars.lit(path_str).alias("path"))
+            df = df.with_columns(polars.lit(str(self.path)).alias("path"))
 
         return df
 
@@ -63,17 +70,12 @@ class JsonlLoadResult(BaseModel, Generic[T]):
         Returns:
             Pandas DataFrame containing the model data
         """
-        if not self.values:
-            # Return an empty DataFrame if there are no rows
+        if not self.value:
             return pandas.DataFrame()
 
-        # Convert each model to a dict
-        data_dicts = [row.model_dump() for row in self.values]
-
-        # Create a DataFrame from the list of dicts
+        data_dicts = [row.row.model_dump() for row in self.value]
         df = pandas.DataFrame(data_dicts)
 
-        # Add path column if requested
         if include_path_as_column:
             df["path"] = str(self.path)
 
@@ -81,51 +83,77 @@ class JsonlLoadResult(BaseModel, Generic[T]):
 
 
 class JsonlLoader(Generic[T]):
-    """
-    Loader for JSONL (JSON Lines) files that parses each line into the specified Pydantic model.
+    """Generic JSONL file loader that validates rows against a Pydantic model.
 
-    This loader reads a JSONL file line by line, parses each valid JSON line, and validates
-    it against the provided Pydantic model. Empty lines are skipped. The loader will raise
-    exceptions for file not found, invalid paths, and JSON parsing errors.
+    This loader reads a JSONL file and converts each row into instances of a specified
+    Pydantic model, performing validation during the conversion process.
+
+    Type Parameters:
+        T: A Pydantic BaseModel subclass that defines the schema for JSONL rows
     """
 
-    def __init__(self, file_path: str | Path, model: Type[T]) -> None:
-        p = Path(file_path)
-        if not p.exists():
-            raise FileNotFoundError(f"File not found: {file_path}")
-        if not p.is_file():
-            raise ValueError(f"Input path is a directory, not a file: {file_path}")
-        self.file_path = p
+    def __init__(self, model: Type[T]) -> None:
+        """Initialize the JSONL loader with a target model class.
+
+        Args:
+            model: The Pydantic model class used to validate and parse JSONL rows
+        """
         self.model = model
 
-    def load(self) -> JsonlLoadResult[T]:
-        """
-        Load and parse the JSONL file into model instances.
+    def load(self, path: str | Path, encoding: str = "utf-8") -> JsonlLoadResult[T]:
+        """Load and validate data from a JSONL file.
 
-        This method reads the JSONL file, parses each non-empty line as JSON,
-        validates it against the specified Pydantic model, and returns
-        a JsonlLoadResult containing the file path and a list of all
-        successfully parsed model instances.
+        Reads a JSONL file, validates each row against the provided model class,
+        and returns a structured result containing all valid rows.
+
+        The JSONL file must have a header row. Empty lines are skipped during processing.
+
+        Args:
+            path: Path to the JSONL file (string or Path object)
+            encoding: Character encoding of the JSONL file (defaults to "utf-8")
 
         Returns:
-            JsonlLoadResult[T]: Result object containing the file path and list of model instances
+            JsonlLoadResult containing the validated rows as model instances
 
         Raises:
-            ValueError: If any line contains invalid JSON or fails model validation
+            LoadingError: If the file doesn't exist, is a directory, has no headers,
+                          or contains rows that fail validation
         """
-        values: List[T] = []
-        with self.file_path.open("r", encoding="utf-8") as f:
+        p = Path(path)
+        if not p.exists():
+            raise LoadingError(f"File not found: {p}")
+        if not p.is_file():
+            raise LoadingError(f"Input path is a directory: {p}")
+
+        jsonl_rows: List[JsonlRowLoadResult[T]] = []
+        try:
+            f = p.open(mode="r", encoding=encoding)
             for lineno, line in enumerate(f, start=1):
                 raw = line.strip()
+
+                # Skip empty lines
                 if not raw:
-                    continue  # skip empty lines
+                    continue
+
+                # Validation
                 try:
                     obj = json.loads(raw)
+                    parsed: T = self.model.model_validate(obj)
                 except json.JSONDecodeError as e:
-                    raise ValueError(
-                        f"Invalid JSON on line {lineno} of {self.file_path}: {e}"
-                    ) from e
-                parsed = self.model.model_validate(obj)
-                values.append(parsed)
+                    raise LoadingError(
+                        original_exception=e,
+                        error_message=f"Error parsing JSON on line {lineno} of {p}: {e}",
+                    )
+                except ValidationError as e:
+                    raise LoadingError(
+                        original_exception=e,
+                        error_message=f"Error validating row {lineno} of {p}: {e}",
+                    )
 
-        return JsonlLoadResult(path=self.file_path, values=values)
+                jsonl_rows.append(JsonlRowLoadResult(path=p, row=parsed))
+        except FileNotFoundError as e:
+            raise LoadingError(
+                original_exception=e, error_message=f"Error reading file {p}: {e}"
+            )
+
+        return JsonlLoadResult(path=p, value=jsonl_rows)

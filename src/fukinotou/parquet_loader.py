@@ -4,7 +4,9 @@ from typing import List, Type, TypeVar, Generic
 import pandas
 import polars
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+
+from fukinotou.load_error import LoadingError
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -47,17 +49,12 @@ class ParquetLoadResult(BaseModel, Generic[T]):
         Returns:
             Polars DataFrame containing the model data
         """
+        # Return an empty DataFrame if there are no rows
         if not self.value:
-            # Return an empty DataFrame if there are no rows
             return polars.DataFrame()
 
-        # Convert each model to a dict
         data_dicts = [row.value.model_dump() for row in self.value]
-
-        # Create a DataFrame from the list of dicts
         df = polars.DataFrame(data_dicts)
-
-        # Add path column if requested
         if include_path_as_column:
             path_str = str(self.path)
             df = df.with_columns(polars.lit(path_str).alias("path"))
@@ -77,17 +74,12 @@ class ParquetLoadResult(BaseModel, Generic[T]):
         Returns:
             Pandas DataFrame containing the model data
         """
+        # Return an empty DataFrame if there are no rows
         if not self.value:
-            # Return an empty DataFrame if there are no rows
             return pandas.DataFrame()
 
-        # Convert each model to a dict
         data_dicts = [row.value.model_dump() for row in self.value]
-
-        # Create a DataFrame from the list of dicts
         df = pandas.DataFrame(data_dicts)
-
-        # Add path column if requested
         if include_path_as_column:
             df["path"] = str(self.path)
 
@@ -103,16 +95,10 @@ class ParquetLoader(Generic[T]):
     exceptions for file not found and invalid paths.
     """
 
-    def __init__(self, path: str | Path, model: Type[T]) -> None:
-        p = Path(path)
-        if not p.exists():
-            raise FileNotFoundError(f"File not found: {path}")
-        if not p.is_file():
-            raise ValueError(f"Input path is directory path: {path}")
-        self.file_path = p
+    def __init__(self, model: Type[T]) -> None:
         self.model = model
 
-    def load(self) -> ParquetLoadResult[T]:
+    def load(self, path: str | Path) -> ParquetLoadResult[T]:
         """
         Load and parse the Parquet file into model instances.
 
@@ -127,15 +113,35 @@ class ParquetLoader(Generic[T]):
             FileNotFoundError: If the file doesn't exist
             ValueError: If a row fails model validation
         """
-        df = pl.read_parquet(self.file_path)
+        p = Path(path)
+        if not p.exists():
+            raise LoadingError(
+                original_exception=None, error_message=f"File not found: {p}"
+            )
+        if not p.is_file():
+            raise LoadingError(
+                original_exception=None, error_message=f"Input path is a directory: {p}"
+            )
+
+        # we cannot expect all error of read_parquet()
+        try:
+            df = pl.read_parquet(p)
+        except Exception as e:
+            raise LoadingError(
+                original_exception=e,
+                error_message=f"Error reading Parquet file {p}: {e}",
+            )
 
         results: List[ParquetRowLoadResult[T]] = []
         for row_dict in df.to_dicts():
-            # Filter out None values to use model defaults instead
             cleaned_dict = {k: v for k, v in row_dict.items() if v is not None}
-            model_instance = self.model(**cleaned_dict)
-            results.append(
-                ParquetRowLoadResult(path=self.file_path, value=model_instance)
-            )
+            try:
+                model_instance = self.model.model_validate(cleaned_dict)
+            except ValidationError as e:
+                raise LoadingError(
+                    original_exception=e,
+                    error_message=f"Error validating row in {p}: {e}",
+                )
+            results.append(ParquetRowLoadResult(path=p, value=model_instance))
 
-        return ParquetLoadResult(path=self.file_path, value=results)
+        return ParquetLoadResult(path=p, value=results)

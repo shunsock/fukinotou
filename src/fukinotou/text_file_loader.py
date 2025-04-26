@@ -3,6 +3,7 @@ from typing import List
 
 from pydantic import BaseModel
 
+from .load_error import LoadingError
 from .path_handler.path_searcher import PathSearcher
 
 
@@ -26,34 +27,33 @@ class TextFileLoader:
     Provides functionality to load text data from a specified file path.
     """
 
-    def __init__(self, path: str | Path) -> None:
-        """
-        Initialize the TextFileLoader.
-
-        Args:
-            path: Path to the file to load (string or Path object)
-
-        Raises:
-            FileNotFoundError: If the specified path does not exist
-            ValueError: If the specified path is a directory
-        """
-        if not Path(path).exists():
-            raise FileNotFoundError(f"File not found: {path}")
-        if not Path(path).is_file():
-            raise ValueError(f"Input path is directory path: {path}")
-        self.file_path_guaranteed = Path(path)
-
-    def load(self) -> TextFileLoadResult:
+    @staticmethod
+    def load(path: str | Path, encoding: str = "utf-8") -> TextFileLoadResult:
         """
         Load the content of the file.
 
         Returns:
             TextFileLoadResult: Result object containing the file path and its content
         """
-        with open(self.file_path_guaranteed, "r", encoding="utf-8") as f:
+        p = Path(path)
+        if not Path(path).exists():
+            raise LoadingError(
+                original_exception=None, error_message=f"File not found: {path}"
+            )
+        if not Path(path).is_file():
+            raise LoadingError(
+                original_exception=None,
+                error_message=f"Input path is directory path: {path}",
+            )
+        try:
+            content = p.read_text(encoding=encoding)
             return TextFileLoadResult(
-                path=self.file_path_guaranteed,
-                value=f.read(),
+                path=p,
+                value=content,
+            )
+        except Exception as e:
+            raise LoadingError(
+                original_exception=e, error_message=f"Error reading file {path}: {e}"
             )
 
 
@@ -62,11 +62,11 @@ class TextFilesLoadResult(BaseModel):
     Model representing the result of loading multiple text files.
 
     Attributes:
-        directory_path: Path to the source directory
+        path: Path to the source directory
         value: List of results for each loaded file
     """
 
-    directory_path: Path
+    path: Path
     value: List[TextFileLoadResult]
 
 
@@ -77,42 +77,39 @@ class TextFilesLoader:
     Recursively loads all .txt files in the specified directory.
     """
 
-    def __init__(self, directory_path: Path) -> None:
-        """
-        Initialize the TextFilesLoader.
-
-        Args:
-            directory_path: Directory path to search for text files
-
-        Raises:
-            FileNotFoundError: If the specified path does not exist
-            ValueError: If the specified path is a file
-        """
-        if not Path(directory_path).exists():
-            raise FileNotFoundError(f"File not found: {directory_path}")
-        if not Path(directory_path).is_dir():
-            raise ValueError(f"Input path is file path: {directory_path}")
-        self.directory_path = directory_path
-        self.text_files_guaranteed = (
-            PathSearcher.search_specific_extension_paths_from_directory_path(
-                path=directory_path,
-                extension=".txt",
-            )
-        )
-
-    def load(self) -> TextFilesLoadResult:
+    @staticmethod
+    def load(path: str | Path, encoding: str = "utf-8") -> TextFilesLoadResult:
         """
         Load all text files in the directory.
 
         Returns:
             TextFilesLoadResult: Object containing the directory path and loading results for each file
         """
-        results: List[TextFileLoadResult] = []
-        for text_file in self.text_files_guaranteed:
-            results.append(
-                TextFileLoader(path=text_file).load(),
+        p = Path(path)
+        if not Path(path).exists():
+            raise LoadingError(
+                original_exception=None, error_message=f"File not found: {path}"
             )
+        if not Path(path).is_dir():
+            raise LoadingError(
+                original_exception=None,
+                error_message=f"Input path is file path: {path}",
+            )
+
+        text_files: List[Path] = (
+            PathSearcher.search_specific_extension_paths_from_directory_path(
+                path=p,
+                extension=".txt",
+            )
+        )
+
+        # propagate LoadingError
+        loader = TextFileLoader()
+        results: List[TextFileLoadResult] = [
+            loader.load(text_file) for text_file in text_files
+        ]
+
         return TextFilesLoadResult(
-            directory_path=self.directory_path,
+            path=p,
             value=results,
         )

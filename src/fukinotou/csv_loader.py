@@ -1,24 +1,26 @@
 import csv
 from pathlib import Path
 from typing import Dict, List, Type, TypeVar, Generic
+
 import polars
 import pandas
-
 from pydantic import BaseModel
+
+from .load_error import LoadingError
 
 T = TypeVar("T", bound=BaseModel)
 
 
 class CsvRowLoadResult(BaseModel, Generic[T]):
-    """Model representing the result of loading a single CSV row.
+    """Model representing a single row loaded from a CSV file.
 
     Attributes:
-        path: Path to the loaded file
-        value: Content of the file as model instance
+        path: Path to the CSV file from which this row was loaded
+        row: The parsed and validated row data as a model instance
     """
 
     path: Path
-    value: T
+    row: T
 
 
 class CsvLoadResult(BaseModel, Generic[T]):
@@ -46,19 +48,13 @@ class CsvLoadResult(BaseModel, Generic[T]):
             Polars DataFrame containing the model data
         """
         if not self.value:
-            # Return an empty DataFrame if there are no rows
             return polars.DataFrame()
 
-        # Convert each model to a dict
-        data_dicts = [row.value.model_dump() for row in self.value]
-
-        # Create a DataFrame from the list of dicts
+        data_dicts = [row.row.model_dump() for row in self.value]
         df = polars.DataFrame(data_dicts)
 
-        # Add path column if requested
         if include_path_as_column:
-            path_str = str(self.path)
-            df = df.with_columns(polars.lit(path_str).alias("path"))
+            df = df.with_columns(polars.lit(str(self.path)).alias("path"))
 
         return df
 
@@ -76,16 +72,11 @@ class CsvLoadResult(BaseModel, Generic[T]):
             Pandas DataFrame containing the model data
         """
         if not self.value:
-            # Return an empty DataFrame if there are no rows
             return pandas.DataFrame()
 
-        # Convert each model to a dict
-        data_dicts = [row.value.model_dump() for row in self.value]
-
-        # Create a DataFrame from the list of dicts
+        data_dicts = [row.row.model_dump() for row in self.value]
         df = pandas.DataFrame(data_dicts)
 
-        # Add path column if requested
         if include_path_as_column:
             df["path"] = str(self.path)
 
@@ -93,54 +84,85 @@ class CsvLoadResult(BaseModel, Generic[T]):
 
 
 class CsvLoader(Generic[T]):
-    """CSV file loader that reads and converts data to specified model instances.
+    """Generic CSV file loader that validates rows against a Pydantic model.
 
-    Args:
-        path: Path to the CSV file to load
-        model: Pydantic model class to convert each row into
+    This loader reads a CSV file and converts each row into instances of a specified
+    Pydantic model, performing validation during the conversion process.
 
-    Raises:
-        FileNotFoundError: The specified path does not exist
-        ValueError: If the specified path is a directory
+    Type Parameters:
+        T: A Pydantic BaseModel subclass that defines the schema for CSV rows
     """
 
-    def __init__(self, path: str | Path, model: Type[T]) -> None:
-        p = Path(path)
-        if not p.exists():
-            raise FileNotFoundError(f"File not found: {path}")
-        if not p.is_file():
-            raise ValueError(f"Input path is directory path: {path}")
-        self.file_path = p
+    def __init__(self, model: Type[T]) -> None:
+        """Initialize the CSV loader with a target model class.
+
+        Args:
+            model: The Pydantic model class used to validate and parse CSV rows
+        """
         self.model = model
 
-    def load(self, encoding: str = "utf-8") -> CsvLoadResult[T]:
-        """Load and parse a CSV file into a list of model instances.
+    def load(self, path: str | Path, encoding: str = "utf-8") -> CsvLoadResult[T]:
+        """Load and validate data from a CSV file.
 
-        Treats the first row as headers and later rows as data.
-        Each row is converted to a model instance with headers as keys.
+        Reads a CSV file, validates each row against the provided model class,
+        and returns a structured result containing all valid rows.
+
+        The CSV file must have a header row. Empty lines are skipped during processing.
+
+        Args:
+            path: Path to the CSV file (string or Path object)
+            encoding: Character encoding of the CSV file (defaults to "utf-8")
 
         Returns:
-            CsvLoadResult containing the file path and list of parsed rows
+            CsvLoadResult containing the validated rows as model instances
+
+        Raises:
+            LoadingError: If the file doesn't exist, is a directory, has no headers,
+                          or contains rows that fail validation
         """
-        with self.file_path.open("r", encoding=encoding) as f:
-            csv_rows: List[CsvRowLoadResult[T]] = []
+        p = Path(path)
+        if not p.exists():
+            raise LoadingError(f"File not found: {p}")
+        if not p.is_file():
+            raise LoadingError(f"Input path is a directory: {p}")
+
+        csv_rows: List[CsvRowLoadResult[T]] = []
+        try:
+            f = p.open("r", encoding=encoding)
             reader = csv.reader(f)
+
+            # Header is required
             try:
-                headers = next(reader, [])
-
-                for row_data in reader:
-                    row_dict: Dict[str, str] = {}
-                    for i, header in enumerate(headers):
-                        if i < len(row_data):
-                            row_dict[header] = row_data[i]
-
-                    model_instance = self.model(**row_dict)
-
-                    csv_rows.append(
-                        CsvRowLoadResult(path=self.file_path, value=model_instance)
-                    )
+                headers = next(reader)
             except StopIteration:
-                # Handle an empty file
-                pass
+                raise LoadingError(
+                    original_exception=None, error_message=f"No headers found in {p}"
+                )
 
-            return CsvLoadResult(path=self.file_path, value=csv_rows)
+            # Validation foreach rows
+            for row_number, row_data in enumerate(reader, start=2):
+                # Skip empty lines
+                if not any(cell.strip() for cell in row_data):
+                    continue
+
+                # Validation
+                row_dict: Dict[str, str] = {}
+                for i, header in enumerate(headers):
+                    if i < len(row_data):
+                        row_dict[header] = row_data[i]
+
+                try:
+                    model_instance = self.model(**row_dict)
+                except Exception as e:
+                    raise LoadingError(
+                        original_exception=e,
+                        error_message=f"Error parsing row {row_number} in {p}: {e}",
+                    )
+
+                csv_rows.append(CsvRowLoadResult(path=p, row=model_instance))
+        except Exception as e:
+            raise LoadingError(
+                original_exception=e, error_message=f"Error reading file {p}: {e}"
+            )
+
+        return CsvLoadResult(path=p, value=csv_rows)

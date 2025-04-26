@@ -10,6 +10,7 @@ from fukinotou.parquet_loader import (
     ParquetLoader,
     ParquetLoadResult,
     ParquetRowLoadResult,
+    LoadingError,
 )
 
 
@@ -22,42 +23,40 @@ class _TestModel(BaseModel):
 
 
 class TestParquetLoader:
-    def test_init_with_nonexistent_file(self) -> None:
+    def test_load_nonexistent_file(self) -> None:
         """
-        Test that ParquetLoader initialization raises FileNotFoundError when file doesn't exist.
+        Test that ParquetLoader.load() raises LoadingError when file doesn't exist.
 
         This test verifies that an appropriate exception is raised when trying to
-        initialize a ParquetLoader with a path that doesn't exist on the file system.
+        load a Parquet file with a path that doesn't exist on the file system.
 
-        Expected: FileNotFoundError with message containing "File not found"
+        Expected: LoadingError with message containing "File not found"
         """
         # Arrange
         non_existent_path = Path("/path/to/nonexistent/file.parquet")
+        loader = ParquetLoader(_TestModel)
 
         # Act & Assert
-        with pytest.raises(FileNotFoundError) as excinfo:
-            ParquetLoader(non_existent_path, _TestModel)
+        with pytest.raises(LoadingError, match="File not found"):
+            loader.load(non_existent_path)
 
-        assert "File not found" in str(excinfo.value)
-
-    def test_init_with_directory_path(self) -> None:
+    def test_load_directory_path(self) -> None:
         """
-        Test that ParquetLoader initialization raises ValueError when given a directory path.
+        Test that ParquetLoader.load() raises LoadingError when given a directory path.
 
         This test verifies that the loader correctly identifies when a provided path
         points to a directory rather than a file and raises an appropriate exception.
 
-        Expected: ValueError with message containing "Input path is directory path"
+        Expected: LoadingError with message containing "Input path is a directory"
         """
         # Arrange
         with tempfile.TemporaryDirectory() as temp_dir:
             dir_path = Path(temp_dir)
+            loader = ParquetLoader(_TestModel)
 
             # Act & Assert
-            with pytest.raises(ValueError) as excinfo:
-                ParquetLoader(dir_path, _TestModel)
-
-            assert "Input path is directory path" in str(excinfo.value)
+            with pytest.raises(LoadingError, match="Input path is a directory"):
+                loader.load(dir_path)
 
     def test_load_parquet_file_successfully(self) -> None:
         """
@@ -85,10 +84,10 @@ class TestParquetLoader:
         df.write_parquet(temp_path)
 
         try:
-            loader = ParquetLoader(temp_path, _TestModel)
+            loader = ParquetLoader(_TestModel)
 
             # Act
-            result = loader.load()
+            result = loader.load(temp_path)
 
             # Assert
             assert isinstance(result, ParquetLoadResult)
@@ -143,10 +142,10 @@ class TestParquetLoader:
         df.write_parquet(temp_path)
 
         try:
-            loader = ParquetLoader(temp_path, _TestModel)
+            loader = ParquetLoader(_TestModel)
 
             # Act
-            result = loader.load()
+            result = loader.load(temp_path)
 
             # Assert
             assert len(result.value) == 3
@@ -185,10 +184,10 @@ class TestParquetLoader:
         df.write_parquet(temp_path)
 
         try:
-            loader = ParquetLoader(temp_path, _TestModel)
+            loader = ParquetLoader(_TestModel)
 
             # Act
-            result = loader.load()
+            result = loader.load(temp_path)
 
             # Assert
             assert len(result.value) == 2
@@ -234,10 +233,10 @@ class TestParquetLoader:
         df.write_parquet(temp_path)
 
         try:
-            loader = ParquetLoader(temp_path, _TestModel)
+            loader = ParquetLoader(_TestModel)
 
             # Act
-            result = loader.load()
+            result = loader.load(temp_path)
 
             # Assert
             assert len(result.value) == 3
@@ -270,10 +269,10 @@ class TestParquetLoader:
         df.write_parquet(temp_path)
 
         try:
-            loader = ParquetLoader(temp_path, _TestModel)
+            loader = ParquetLoader(_TestModel)
 
             # Act
-            result = loader.load()
+            result = loader.load(temp_path)
 
             # Assert
             assert isinstance(result, ParquetLoadResult)
@@ -308,8 +307,8 @@ class TestParquetLoader:
         df.write_parquet(temp_path)
 
         try:
-            loader = ParquetLoader(temp_path, _TestModel)
-            result = loader.load()
+            loader = ParquetLoader(_TestModel)
+            result = loader.load(temp_path)
 
             # Act
             df = result.to_polars()
@@ -352,8 +351,8 @@ class TestParquetLoader:
         df.write_parquet(temp_path)
 
         try:
-            loader = ParquetLoader(temp_path, _TestModel)
-            result = loader.load()
+            loader = ParquetLoader(_TestModel)
+            result = loader.load(temp_path)
 
             # Act
             df = result.to_polars()
@@ -390,8 +389,8 @@ class TestParquetLoader:
         df.write_parquet(temp_path)
 
         try:
-            loader = ParquetLoader(temp_path, _TestModel)
-            result = loader.load()
+            loader = ParquetLoader(_TestModel)
+            result = loader.load(temp_path)
 
             # Act
             df = result.to_pandas()
@@ -434,8 +433,8 @@ class TestParquetLoader:
         df.write_parquet(temp_path)
 
         try:
-            loader = ParquetLoader(temp_path, _TestModel)
-            result = loader.load()
+            loader = ParquetLoader(_TestModel)
+            result = loader.load(temp_path)
 
             # Act
             df = result.to_pandas()

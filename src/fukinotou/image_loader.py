@@ -4,6 +4,7 @@ from typing import List
 from pydantic import BaseModel, ConfigDict
 from PIL import Image
 
+from .load_error import LoadingError
 from .path_handler.path_searcher import PathSearcher
 
 
@@ -29,34 +30,33 @@ class ImageFileLoader:
     Provides functionality to load image data from a specified file path.
     """
 
-    def __init__(self, path: str | Path) -> None:
-        """
-        Initialize the ImageFileLoader.
-
-        Args:
-            path: Path to the file to load (string or Path object)
-
-        Raises:
-            FileNotFoundError: If the specified path does not exist
-            ValueError: If the specified path is a directory
-        """
-        if not Path(path).exists():
-            raise FileNotFoundError(f"File not found: {path}")
-        if not Path(path).is_file():
-            raise ValueError(f"Input path is directory path: {path}")
-        self.file_path_guaranteed = Path(path)
-
-    def load(self) -> ImageFileLoadResult:
+    @staticmethod
+    def load(path: str | Path) -> ImageFileLoadResult:
         """
         Load the content of the file.
 
         Returns:
             ImageFileLoadResult: Result object containing the file path and its content
         """
-        with Image.open(self.file_path_guaranteed) as image:
+        p = Path(path)
+        if not Path(p).exists():
+            raise LoadingError(
+                original_exception=None, error_message=f"File not found: {p}"
+            )
+        if not Path(p).is_file():
+            raise LoadingError(
+                original_exception=None,
+                error_message=f"Input path is directory path: {p}",
+            )
+        try:
+            image = Image.open(p)
             return ImageFileLoadResult(
-                path=self.file_path_guaranteed,
+                path=p,
                 value=image,
+            )
+        except Exception as e:
+            raise LoadingError(
+                original_exception=e, error_message=f"Error reading file {p}: {e}"
             )
 
 
@@ -80,42 +80,35 @@ class ImageFilesLoader:
     Recursively loads all image files with specified extensions in the given directory.
     """
 
-    def __init__(self, directory_path: Path, extensions: List[str]) -> None:
-        """
-        Initialize the ImageFilesLoader.
-
-        Args:
-            directory_path: Directory path to search for image files
-            extensions: List of file extensions to load
-
-        Raises:
-            FileNotFoundError: If the specified path does not exist
-            ValueError: If the specified path is a file
-        """
-        if not Path(directory_path).exists():
-            raise FileNotFoundError(f"File not found: {directory_path}")
-        if not Path(directory_path).is_dir():
-            raise ValueError(f"Input path is file path: {directory_path}")
-        self.directory_path = directory_path
-        self.image_files_guaranteed = (
-            PathSearcher.search_specific_extensions_paths_from_directory_path(
-                path=directory_path, extensions=extensions
-            )
-        )
-
-    def load(self) -> ImageFilesLoadResult:
+    @staticmethod
+    def load(path: str | Path, extensions: List[str]) -> ImageFilesLoadResult:
         """
         Load all image files in the directory.
 
         Returns:
             ImageFilesLoadResult: Object containing the directory path and loading results for each file
         """
-        results: List[ImageFileLoadResult] = []
-        for image_file in self.image_files_guaranteed:
-            results.append(
-                ImageFileLoader(path=image_file).load(),
+        p = Path(path)
+        if not p.exists():
+            raise LoadingError(
+                original_exception=None, error_message=f"File not found: {p}"
             )
+        if not p.is_dir():
+            raise LoadingError(
+                original_exception=None,
+                error_message=f"Input path is file path: {p}",
+            )
+
+        image_file_paths: List[Path] = (
+            PathSearcher.search_specific_extensions_paths_from_directory_path(
+                path=p, extensions=extensions
+            )
+        )
+
+        results: List[ImageFileLoadResult] = [
+            ImageFileLoader().load(image_file) for image_file in image_file_paths
+        ]
         return ImageFilesLoadResult(
-            directory_path=self.directory_path,
+            directory_path=p,
             value=results,
         )
