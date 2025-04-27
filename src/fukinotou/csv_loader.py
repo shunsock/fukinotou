@@ -1,6 +1,6 @@
 import csv
 from pathlib import Path
-from typing import Dict, List, Type, TypeVar, Generic
+from typing import Dict, List, Type, TypeVar, Generic, Iterator
 
 from pydantic import BaseModel, ValidationError
 
@@ -90,33 +90,37 @@ class CsvLoader(Generic[T]):
                 original_exception=e, error_message=f"Error reading file {p}: {e}"
             )
 
-
     @staticmethod
-    def _read_csv_headers(reader: csv.reader, path: Path) -> List[str]:
+    def _read_csv_headers(reader: Iterator[List[str]], path: Path) -> List[str]:
         try:
-            return next(reader)
+            headers: List[str] = next(reader)
+            return headers
         except StopIteration:
             raise LoadingException(
-                original_exception=None,
-                error_message=f"No headers found in {path}"
+                original_exception=None, error_message=f"No headers found in {path}"
             )
 
-    def _validate_csv_row(self, reader: csv.reader, headers: List[str], path: Path) -> List[CsvRow[T]]:
+    def _validate_csv_row(
+        self, reader: Iterator[List[str]], headers: List[str], path: Path
+    ) -> List[CsvRow[T]]:
         csv_rows: List[CsvRow[T]] = []
         # Validation foreach rows
         for row_number, row_data in enumerate(reader, start=2):
+            row_data_typed: List[str] = row_data
             # Skip empty lines
-            if not any(cell.strip() for cell in row_data):
+            if not any(cell.strip() for cell in row_data_typed):
                 continue
 
             # Validation
             row_dict: Dict[str, str] = {}
             for i, header in enumerate(headers):
-                if i < len(row_data):
-                    row_dict[header] = row_data[i]
+                if i < len(row_data_typed):
+                    row_dict[header] = row_data_typed[i]
 
             try:
-                csv_rows.append(self.model.model_validate(row_dict))
+                csv_rows.append(
+                    CsvRow(path=path, value=self.model.model_validate(row_dict))
+                )
             except ValidationError as e:
                 raise LoadingException(
                     original_exception=e,
