@@ -3,8 +3,14 @@ name: Validate
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
   pull_request:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
   workflow_dispatch: {}
 
 jobs:
