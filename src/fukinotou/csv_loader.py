@@ -79,43 +79,47 @@ class CsvLoader(Generic[T]):
         if not p.is_file():
             raise LoadingException(f"Input path is invalid: {p}")
 
-        csv_rows: List[CsvRow[T]] = []
         try:
-            f = p.open("r", encoding=encoding)
-            reader = csv.reader(f)
-
-            # Header is required
-            try:
-                headers = next(reader)
-            except StopIteration:
-                raise LoadingException(
-                    original_exception=None, error_message=f"No headers found in {p}"
-                )
-
-            # Validation foreach rows
-            for row_number, row_data in enumerate(reader, start=2):
-                # Skip empty lines
-                if not any(cell.strip() for cell in row_data):
-                    continue
-
-                # Validation
-                row_dict: Dict[str, str] = {}
-                for i, header in enumerate(headers):
-                    if i < len(row_data):
-                        row_dict[header] = row_data[i]
-
-                try:
-                    model_instance = self.model.model_validate(row_dict)
-                except ValidationError as e:
-                    raise LoadingException(
-                        original_exception=e,
-                        error_message=f"Error parsing row {row_number} in {p}: {e}",
-                    )
-
-                csv_rows.append(CsvRow(path=p, value=model_instance))
+            with p.open("r", encoding=encoding) as f:
+                reader = csv.reader(f)
+                headers = self._read_csv_headers(reader, p)
+                csv_rows = self._validate_csv_row(reader, headers, p)
+                return CsvLoaded(path=p, value=csv_rows)
         except Exception as e:
             raise LoadingException(
                 original_exception=e, error_message=f"Error reading file {p}: {e}"
             )
 
-        return CsvLoaded(path=p, value=csv_rows)
+
+    @staticmethod
+    def _read_csv_headers(reader: csv.reader, path: Path) -> List[str]:
+        try:
+            return next(reader)
+        except StopIteration:
+            raise LoadingException(
+                original_exception=None,
+                error_message=f"No headers found in {path}"
+            )
+
+    def _validate_csv_row(self, reader: csv.reader, headers: List[str], path: Path) -> List[CsvRow[T]]:
+        csv_rows: List[CsvRow[T]] = []
+        # Validation foreach rows
+        for row_number, row_data in enumerate(reader, start=2):
+            # Skip empty lines
+            if not any(cell.strip() for cell in row_data):
+                continue
+
+            # Validation
+            row_dict: Dict[str, str] = {}
+            for i, header in enumerate(headers):
+                if i < len(row_data):
+                    row_dict[header] = row_data[i]
+
+            try:
+                csv_rows.append(self.model.model_validate(row_dict))
+            except ValidationError as e:
+                raise LoadingException(
+                    original_exception=e,
+                    error_message=f"Error parsing row {row_number} in {path}: {e}",
+                )
+        return csv_rows
