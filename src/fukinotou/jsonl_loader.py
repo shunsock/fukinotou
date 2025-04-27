@@ -21,7 +21,11 @@ class JsonlRow(BaseModel, Generic[T]):
     value: T
 
 
-class JsonlLoaded(Generic[T], DataframeExportable):
+class JsonlLoaded(
+    BaseModel,
+    Generic[T],
+    DataframeExportable[JsonlRow[T]],
+):
     """Model representing the result of loading an entire JSONL file.
 
     Attributes:
