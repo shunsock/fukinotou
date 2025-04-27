@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 dependencies = [
     "pandas>=2.2.3",
     "pillow>=11.2.1",
-    "polars>=1.27.1",
+    "polars[all]>=1.27.1",
     "pydantic>=2.11.3",
 ]
 

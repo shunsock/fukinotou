@@ -23,7 +23,11 @@ class ParquetRow(BaseModel, Generic[T]):
     value: T
 
 
-class ParquetLoaded(BaseModel, Generic[T], DataframeExportable):
+class ParquetLoaded(
+    BaseModel,
+    Generic[T],
+    DataframeExportable[ParquetRow[T]],
+):
     """
     Model representing the result of loading an entire Parquet file.
 

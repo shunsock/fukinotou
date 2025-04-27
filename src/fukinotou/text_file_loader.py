@@ -98,7 +98,7 @@ class TextFilesLoader:
         # propagate LoadingError
         loader = TextFileLoader()
         results: List[TextFileLoaded] = [
-            loader.load(text_file) for text_file in text_files
+            loader.load(text_file, encoding) for text_file in text_files
         ]
 
         return TextFilesLoaded(
