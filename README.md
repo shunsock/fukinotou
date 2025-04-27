@@ -1,13 +1,13 @@
 # Fukinotou
 
-Fukinotou is a Data Loader that we can inject our domain model.
+Fukinotou is a Data Loader that we can validate with our domain model.
 
 ## Why Fukinotou
 
 ### Validated during loading, but not afterward
 
-Nowadays, validating data is a common idea before transforming or exporting. And we also have Pydantic Models in application.
-If you are FastAPI user, you may see the following code.
+Data validation before transformation or export is a common requirement in modern applications, and Pydantic Models are
+widely used for this purpose. If you are FastAPI user, you may see the following code.
 
 ```python
 class Item(BaseModel):
@@ -25,24 +25,29 @@ from fukinotou import JsonLoader, JsonLoaded
 users: JsonLoaded[Visitor] = JsonLoader(Visitor).load("./visitor.json")
 ```
 
+This means, we can treat loaded data reliable if a loading process is succeeded.
+
 ### Path Information is combined with loaded values
 
-Path information is important when debugging analysis. Fukinotou protests your path information.
+Path information is crucial for debugging during analysis. Fukinotou preserves your path information throughout the
+process. This is an example of reading logfiles under "./". 
 
 ```python
-from fukinotou import CsvLoader, CsvLoaded
+from fukinotou import JsonsLoader, JsonsLoaded
 
-users: CsvLoaded[Visitor] = CsvLoader(Visitor).load("./visitor.csv")
-print(users.path)
-print(users[0].path) # you can ith of row value with users[i].value
+logfiles: JsonsLoaded[LogFileFormat] = JsonsLoader(LogfileFormat).load("./")
+print(logfiles.path) # show directory path
+print(logfiles.value[1].value.path) # show i-th log file path (not directory)
+print(logfiles.value[1].value.value) # show i-th log file value
 ```
 
 ### Export to Dataframe
 
-We often export collections to dataframe object (such as `pandas`, `polars`, and so on).
+Converting data collections to DataFrame objects (like `pandas` or `polars`) is a common requirement.
 
-Tackling the issue, we also provide method `to_polars` and `to_pandas` to convert the loaded data into Polars or Pandas Dataframe through `DataframeExportable`
-Thus, we can export easily, by calling these methods from class inheriting `DataframeExportable` (ex: `JsonsLoaded`).
+To simplify this process, we provide `to_polars` and `to_pandas` methods through the `DataframeExportable` interface.
+Any class that inherits from `DataframeExportable` (such as `JsonsLoaded`) can easily export data to these DataFrame
+formats.
 
 ```python
 from fukinotou import JsonLoader, JsonsLoaded
@@ -61,16 +66,18 @@ Python 3.10 or later is required.
 
 ### Using uv (recommended):
 
+You can install by command below
+
 ```shell
 uv pip install git+https://github.com/shunsock/fukinotou.git
 ```
 
-🚧 **Under Construction**
-- You can not use this feature currently, use above option instead.
-- To install a specific version/tag, use:
+or add following code to `pyproject.toml` and run `uv sync`
 
-```shell
-uv pip install git+https://github.com/shunsock/fukinotou.git@<tag-name>
+```
+dependencies = [
+    "fukinotou @ git+https://github.com/shunsock/fukinotou.git"
+]
 ```
 
 ### Using pip:
@@ -153,7 +160,6 @@ from fukinotou.image_loader import (
     ImagesLoader,
 )
 ```
-
 
 ## Development
 
