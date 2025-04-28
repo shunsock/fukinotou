@@ -78,21 +78,21 @@ class JsonLoader(Generic[T]):
                 original_exception=None, error_message=f"Input path is invalid: {path}"
             )
 
-        try:
-            f = p.open("r", encoding="utf-8")
-            raw = json.load(f)
-            parsed = self.model.model_validate(raw)
-        except json.JSONDecodeError as e:
-            raise LoadingException(
-                original_exception=e,
-                error_message=f"Error parsing JSON file {path}: {e}",
-            )
-        except ValidationError as e:
-            raise LoadingException(
-                original_exception=e,
-                error_message=f"Error validating JSON file {path}: {e}",
-            )
-        return JsonLoaded(path=p, value=parsed)
+        with p.open(encoding="utf-8") as json_file:
+            try:
+                raw = json.load(json_file)
+                parsed = self.model.model_validate(raw)
+            except json.JSONDecodeError as e:
+                raise LoadingException(
+                    original_exception=e,
+                    error_message=f"Error parsing JSON file {path}: {e}",
+                )
+            except ValidationError as e:
+                raise LoadingException(
+                    original_exception=e,
+                    error_message=f"Error validating JSON file {path}: {e}",
+                )
+            return JsonLoaded(path=p, value=parsed)
 
 
 class JsonsLoader(Generic[T]):
