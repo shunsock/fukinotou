@@ -85,7 +85,7 @@ class JsonlLoader(Generic[T]):
                     # remove space outside of contents
                     c = content.strip()
                     if not c:
-                        continue # skip empty lines
+                        continue  # skip empty lines
 
                     # Validation
                     parsed = self._validate_json_string_as_model(
