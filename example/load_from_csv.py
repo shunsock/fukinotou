@@ -19,4 +19,3 @@ except LoadingException as e:
 
 users_dataframe = users.to_polars(include_path_as_column=True)
 print(users_dataframe)
-
