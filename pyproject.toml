@@ -29,7 +29,7 @@ dev = [
 include = ["src/fukinotou/py.typed"]
 
 [tool.uv.workspace]
-members = [
+exclude = [
     "example/example",
 ]
 
