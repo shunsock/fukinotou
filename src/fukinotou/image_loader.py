@@ -52,25 +52,21 @@ class ImageLoader:
             ImageLoaded: Result object containing the file path and its content
         """
         p = Path(path)
-        if not Path(p).exists():
-            raise LoadingException(
-                original_exception=None, error_message=f"File not found: {p}"
-            )
         if not Path(p).is_file():
             raise LoadingException(
                 original_exception=None,
                 error_message=f"Input path is directory path: {p}",
             )
-        try:
-            image = Image.open(p)
-            return ImageLoaded(
-                path=p,
-                value=image,
-            )
-        except Exception as e:
-            raise LoadingException(
-                original_exception=e, error_message=f"Error reading file {p}: {e}"
-            )
+        with Image.open(p) as image:
+            try:
+                return ImageLoaded(
+                    path=p,
+                    value=image,
+                )
+            except Exception as e:
+                raise LoadingException(
+                    original_exception=e, error_message=f"Error reading file {p}: {e}"
+                )
 
 
 class ImagesLoader:
