@@ -1,0 +1,9 @@
+[project]
+name = "fukinotou-example"
+version = "0.0.1"
+description = "this is example to show how to use fukinotou"
+requires-python = ">=3.10"
+dependencies = [
+    "fukinotou @ git+https://github.com/shunsock/fukinotou.git@3a8f252ccf4a19b5b9bfdac3355c86b8d514a476"
+]
+
