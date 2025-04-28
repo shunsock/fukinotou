@@ -79,34 +79,45 @@ class JsonlLoader(Generic[T]):
             raise LoadingException(f"Input path is invalid: {p}")
 
         jsonl_rows: List[JsonlRow[T]] = []
-        try:
-            f = p.open(mode="r", encoding=encoding)
-            for lineno, line in enumerate(f, start=1):
-                raw = line.strip()
+        with p.open(encoding=encoding) as jsonl_file:
+            try:
+                for line, content in enumerate(jsonl_file, start=1):
+                    # remove space outside of contents
+                    c = content.strip()
+                    if not c:
+                        continue # skip empty lines
 
-                # Skip empty lines
-                if not raw:
-                    continue
-
-                # Validation
-                try:
-                    obj = json.loads(raw)
-                    parsed: T = self.model.model_validate(obj)
-                except json.JSONDecodeError as e:
-                    raise LoadingException(
-                        original_exception=e,
-                        error_message=f"Error parsing JSON on line {lineno} of {p}: {e}",
-                    )
-                except ValidationError as e:
-                    raise LoadingException(
-                        original_exception=e,
-                        error_message=f"Error validating row {lineno} of {p}: {e}",
+                    # Validation
+                    parsed = self._validate_json_string_as_model(
+                        content=c,
+                        line=line,
+                        path=p,
                     )
 
-                jsonl_rows.append(JsonlRow(path=p, value=parsed))
-        except FileNotFoundError as e:
-            raise LoadingException(
-                original_exception=e, error_message=f"Error reading file {p}: {e}"
-            )
+                    jsonl_rows.append(JsonlRow(path=p, value=parsed))
+            except Exception as e:
+                raise LoadingException(
+                    original_exception=e, error_message=f"Error reading file {p}: {e}"
+                )
 
         return JsonlLoaded(path=p, value=jsonl_rows)
+
+    def _validate_json_string_as_model(
+        self,
+        content: str,
+        line: int,
+        path: Path,
+    ) -> T:
+        try:
+            obj = json.loads(content)
+            return self.model.model_validate(obj)
+        except json.JSONDecodeError as e:
+            raise LoadingException(
+                original_exception=e,
+                error_message=f"Error parsing JSON on line {line} of {path}: {e}",
+            )
+        except ValidationError as e:
+            raise LoadingException(
+                original_exception=e,
+                error_message=f"Error validating row {line} of {path}: {e}",
+            )
