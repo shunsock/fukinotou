@@ -1,0 +1,63 @@
+name: Create Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+env:
+  PYTHON_VERSION: "3.10"
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: check out
+        uses: actions/checkout@v4
+
+      - name: set release tag
+        id: set_release_tag
+        run: |
+          # extract a line from pyproject.toml
+          version_line=$(grep -m 1 '^version = ' pyproject.toml)
+
+          # extract "x.y.z" from "version = x.y.z" from the line
+          version=$(echo "$version_line" | sed -E 's/version = "([0-9]+\.[0-9]+\.[0-9]+)"/\1/')
+          echo "Extracted version: v${version}"
+
+          # write version to environment variable
+          echo "RELEASE_TAG=v${version}" >> $GITHUB_ENV
+
+      - name: Install uv (with cache)
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.6.16"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Create venv
+        run: uv venv --python ${{ env.PYTHON_VERSION }}
+
+      - name: Sync project
+        run: uv sync --locked --all-extras
+
+      - name: Build
+        run: uv build
+
+      - name: create release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: './dist/*'
+          tag: "${{ env.RELEASE_TAG }}"
+          commit: ${{ github.sha }}
+          name: "Release ${{ env.RELEASE_TAG }}"
+          body: "Release: ${{ env.RELEASE_TAG }} :tada:\n\n Commit: ${{ github.sha }}"
+          draft: false
+          prerelease: false

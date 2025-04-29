@@ -76,7 +76,10 @@ or add following code to `pyproject.toml` and run `uv sync`
 
 ```
 dependencies = [
-    "fukinotou @ git+https://github.com/shunsock/fukinotou.git"
+    "fukinotou @ git+https://github.com/shunsock/fukinotou.git@v1.2.3"
+    # you can also specify a branch or commit hash:
+    # "fukinotou @ git+https://github.com/shunsock/fukinotou.git@branch"
+    # "fukinotou @ git+https://github.com/shunsock/fukinotou.git@commit_hash"
 ]
 ```
 
@@ -162,6 +165,13 @@ from fukinotou.image_loader import (
 ```
 
 ## Development
+
+Thank you for your interest in contributing to Fukinotou!
+Here are some guidelines to help you get started:
+
+### Branch
+
+You can pull requests to `develop` branch. `main` branch is used for release.
 
 ### Taskfile for Developing
 

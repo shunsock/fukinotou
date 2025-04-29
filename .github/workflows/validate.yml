@@ -2,15 +2,21 @@ name: Validate
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - develop
     paths:
       - 'src/**'
       - 'tests/**'
+      - '.github/workflows/**'
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - develop
     paths:
       - 'src/**'
       - 'tests/**'
+      - '.github/workflows/**'
   workflow_dispatch: {}
 
 jobs:
@@ -52,6 +58,9 @@ jobs:
 
       - name: Test
         run: uv run pytest
+
+      - name: Build
+        run: uv build
 
       - name: Prune uv cache
         if: always()
