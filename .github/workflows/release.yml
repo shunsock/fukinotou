@@ -8,9 +8,6 @@ on:
 permissions:
   contents: write
 
-env:
-  PYTHON_VERSION: "3.10"
-
 jobs:
   release:
     name: Create Release
@@ -39,11 +36,13 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
-      - name: Install Python
-        run: uv python install ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
       - name: Create venv
-        run: uv venv --python ${{ env.PYTHON_VERSION }}
+        run: uv venv
 
       - name: Sync project
         run: uv sync --locked --all-extras
