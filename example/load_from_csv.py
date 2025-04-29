@@ -1,7 +1,5 @@
 from fukinotou import CsvLoader, CsvLoaded, LoadingException
 from pydantic import BaseModel
-import polars
-import pandas
 
 
 class User(BaseModel):

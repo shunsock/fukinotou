@@ -1,7 +1,5 @@
 from fukinotou import JsonLoader, JsonLoaded, JsonsLoader, JsonsLoaded, LoadingException
 from pydantic import BaseModel
-import polars
-import pandas
 
 
 class User(BaseModel):
