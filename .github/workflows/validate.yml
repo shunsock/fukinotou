@@ -2,12 +2,16 @@ name: Validate
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - develop
     paths:
       - 'src/**'
       - 'tests/**'
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - develop
     paths:
       - 'src/**'
       - 'tests/**'
