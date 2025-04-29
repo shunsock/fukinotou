@@ -57,6 +57,9 @@ jobs:
       - name: Test
         run: uv run pytest
 
+      - name: Build
+        run: uv build
+
       - name: Prune uv cache
         if: always()
         run: uv cache prune --ci
