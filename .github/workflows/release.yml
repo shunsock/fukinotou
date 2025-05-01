@@ -30,7 +30,7 @@ jobs:
           echo "RELEASE_TAG=v${version}" >> $GITHUB_ENV
 
       - name: Install uv (with cache)
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
           version: "0.6.16"
           enable-cache: true
