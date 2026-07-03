@@ -5,16 +5,22 @@ on:
     branches:
       - main
 
+# release 作成に必要な contents: write は job 側で付与する (最小権限)。
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
       - name: check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
 
       - name: set release tag
         id: set_release_tag
@@ -27,17 +33,17 @@ jobs:
           echo "Extracted version: v${version}"
 
           # write version to environment variable
-          echo "RELEASE_TAG=v${version}" >> $GITHUB_ENV
+          echo "RELEASE_TAG=v${version}" >> "$GITHUB_ENV"
 
       - name: Install uv (with cache)
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
         with:
           version: "0.6.16"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.10"
 
@@ -50,13 +56,14 @@ jobs:
       - name: Build
         run: uv build
 
+      # release 作成は外部 action でなく runner 同梱の gh で行う (zizmor の指摘。
+      # 外部依存が減り supply-chain 面でも安全)。
       - name: create release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: './dist/*'
-          tag: "${{ env.RELEASE_TAG }}"
-          commit: ${{ github.sha }}
-          name: "Release ${{ env.RELEASE_TAG }}"
-          body: "Release: ${{ env.RELEASE_TAG }} :tada:\n\n Commit: ${{ github.sha }}"
-          draft: false
-          prerelease: false
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printf 'Release: %s :tada:\n\nCommit: %s\n' "$RELEASE_TAG" "$GITHUB_SHA" > "$RUNNER_TEMP/notes.md"
+          gh release create "$RELEASE_TAG" ./dist/* \
+            --target "$GITHUB_SHA" \
+            --title "Release $RELEASE_TAG" \
+            --notes-file "$RUNNER_TEMP/notes.md"
