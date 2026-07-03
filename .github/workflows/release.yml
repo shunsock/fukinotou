@@ -5,16 +5,22 @@ on:
     branches:
       - main
 
+# release 作成に必要な contents: write は job 側で付与する (最小権限)。
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
       - name: check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
 
       - name: set release tag
         id: set_release_tag
@@ -27,17 +33,17 @@ jobs:
           echo "Extracted version: v${version}"
 
           # write version to environment variable
-          echo "RELEASE_TAG=v${version}" >> $GITHUB_ENV
+          echo "RELEASE_TAG=v${version}" >> "$GITHUB_ENV"
 
       - name: Install uv (with cache)
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
         with:
           version: "0.6.16"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.10"
 
@@ -51,9 +57,9 @@ jobs:
         run: uv build
 
       - name: create release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@40bb172bd05f266cf9ba4ff965cb61e9ee5f6d01 # v1.9.0
         with:
-          artifacts: './dist/*'
+          artifacts: "./dist/*"
           tag: "${{ env.RELEASE_TAG }}"
           commit: ${{ github.sha }}
           name: "Release ${{ env.RELEASE_TAG }}"
