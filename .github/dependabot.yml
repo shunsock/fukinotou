@@ -4,10 +4,16 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    # リリース直後の versions を避ける (zizmor: dependabot-cooldown 対策。
+    # supply-chain 攻撃の多くは公開直後に検出・取り下げられるため数日置く)。
+    cooldown:
+      default-days: 7
   - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     allow:
       - dependency-name: "pydantic"
       - dependency-name: "pandas"
