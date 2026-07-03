@@ -56,13 +56,14 @@ jobs:
       - name: Build
         run: uv build
 
+      # release 作成は外部 action でなく runner 同梱の gh で行う (zizmor の指摘。
+      # 外部依存が減り supply-chain 面でも安全)。
       - name: create release
-        uses: ncipollo/release-action@40bb172bd05f266cf9ba4ff965cb61e9ee5f6d01 # v1.9.0
-        with:
-          artifacts: "./dist/*"
-          tag: "${{ env.RELEASE_TAG }}"
-          commit: ${{ github.sha }}
-          name: "Release ${{ env.RELEASE_TAG }}"
-          body: "Release: ${{ env.RELEASE_TAG }} :tada:\n\n Commit: ${{ github.sha }}"
-          draft: false
-          prerelease: false
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printf 'Release: %s :tada:\n\nCommit: %s\n' "$RELEASE_TAG" "$GITHUB_SHA" > "$RUNNER_TEMP/notes.md"
+          gh release create "$RELEASE_TAG" ./dist/* \
+            --target "$GITHUB_SHA" \
+            --title "Release $RELEASE_TAG" \
+            --notes-file "$RUNNER_TEMP/notes.md"
