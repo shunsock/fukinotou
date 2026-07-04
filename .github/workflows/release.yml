@@ -56,9 +56,24 @@ jobs:
       - name: Build
         run: uv build
 
+      # version が変わらない main への push でも同名タグで作成を試みると失敗するため、
+      # 既存リリースの有無を確認してリリース作成を冪等にする (Issue #37)。
+      - name: check existing release
+        id: check_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists. Skipping."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       # release 作成は外部 action でなく runner 同梱の gh で行う (zizmor の指摘。
       # 外部依存が減り supply-chain 面でも安全)。
       - name: create release
+        if: steps.check_release.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
