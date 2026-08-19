@@ -14,10 +14,6 @@ updates:
       interval: "monthly"
     cooldown:
       default-days: 7
-    allow:
-      - dependency-name: "pydantic"
-      - dependency-name: "pandas"
-      - dependency-name: "polars"
     ignore:
       - dependency-name: "pydantic"
         update-types:
@@ -28,3 +24,9 @@ updates:
       - dependency-name: "polars"
         update-types:
           - "version-update:semver-patch"
+  - package-ecosystem: "uv"
+    directory: "/example"
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 7
