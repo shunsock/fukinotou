@@ -1,10 +1,9 @@
 from pathlib import Path
+from typing import Any, Generic, Protocol, TypeVar
 
-from typing import Generic, TypeVar, List, Dict, Any, Protocol
-from pydantic import BaseModel
-
-import polars
 import pandas
+import polars
+from pydantic import BaseModel
 
 V = TypeVar("V", bound=BaseModel)
 
@@ -19,9 +18,9 @@ T = TypeVar("T", bound=Row[Any])
 
 class DataframeExportable(Generic[T]):
     path: Path
-    value: List[T]
+    value: list[T]
 
-    def _to_dicts(self, use_path: bool) -> List[Dict[str, Any]]:
+    def _to_dicts(self, use_path: bool) -> list[dict[str, Any]]:
         if not use_path:
             return [v.value.model_dump() for v in self.value]
         return [{**v.value.model_dump(), "path": str(v.path)} for v in self.value]

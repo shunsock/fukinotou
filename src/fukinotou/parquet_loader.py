@@ -1,7 +1,7 @@
-import polars as pl
 from pathlib import Path
-from typing import List, Type, TypeVar, Generic
+from typing import Generic, TypeVar
 
+import polars as pl
 from pydantic import BaseModel, ValidationError
 
 from fukinotou.abstraction.dataframe_exportable import DataframeExportable
@@ -25,8 +25,8 @@ class ParquetRow(BaseModel, Generic[T]):
 
 class ParquetLoaded(
     BaseModel,
-    Generic[T],
     DataframeExportable[ParquetRow[T]],
+    Generic[T],
 ):
     """
     Model representing the result of loading an entire Parquet file.
@@ -37,7 +37,7 @@ class ParquetLoaded(
     """
 
     path: Path
-    value: List[ParquetRow[T]]
+    value: list[ParquetRow[T]]
 
 
 class ParquetLoader(Generic[T]):
@@ -49,7 +49,7 @@ class ParquetLoader(Generic[T]):
     exceptions for file not found and invalid paths.
     """
 
-    def __init__(self, model: Type[T]) -> None:
+    def __init__(self, model: type[T]) -> None:
         self.model = model
 
     def load(self, path: str | Path) -> ParquetLoaded[T]:
@@ -73,7 +73,8 @@ class ParquetLoader(Generic[T]):
                 original_exception=None, error_message=f"Input path is invalid: {p}"
             )
 
-        # we cannot expect all error of read_parquet()
+        # CONSTRAINT: 読み込み失敗は LoadingException に包まなくてはならない。
+        # REASON: polars の送出例外を網羅的に列挙できないため。
         try:
             df = pl.read_parquet(p)
         except Exception as e:
@@ -82,7 +83,7 @@ class ParquetLoader(Generic[T]):
                 error_message=f"Error reading Parquet file {p}: {e}",
             )
 
-        results: List[ParquetRow[T]] = []
+        results: list[ParquetRow[T]] = []
         for row_dict in df.to_dicts():
             cleaned_dict = {k: v for k, v in row_dict.items() if v is not None}
             try:

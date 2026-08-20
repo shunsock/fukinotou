@@ -1,10 +1,9 @@
 from pathlib import Path
-from typing import List
 
 
 class PathSearcher:
     @staticmethod
-    def search_file_paths_from_directory_path(path: Path) -> List[Path]:
+    def search_file_paths_from_directory_path(path: Path) -> list[Path]:
         """
         Search for all files in a directory.
 
@@ -20,7 +19,7 @@ class PathSearcher:
         if path.is_file():
             return [path]
 
-        file_paths: List[Path] = []
+        file_paths: list[Path] = []
         for item in path.iterdir():
             if item.is_file():
                 file_paths.append(item)
@@ -30,7 +29,7 @@ class PathSearcher:
     @staticmethod
     def search_specific_extension_paths_from_directory_path(
         path: Path, extension: str
-    ) -> List[Path]:
+    ) -> list[Path]:
         """
         Search for files with a specific extension in a directory and its subdirectories.
 
@@ -50,8 +49,8 @@ class PathSearcher:
 
     @staticmethod
     def search_specific_extensions_paths_from_directory_path(
-        path: Path, extensions: List[str]
-    ) -> List[Path]:
+        path: Path, extensions: list[str]
+    ) -> list[Path]:
         """
         Search for files with multiple specific extensions in a directory and its subdirectories.
 

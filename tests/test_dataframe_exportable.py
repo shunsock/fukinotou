@@ -1,9 +1,8 @@
 from pathlib import Path
-from typing import List
 
-import pytest
-import polars
 import pandas
+import polars
+import pytest
 from pydantic import BaseModel
 
 from fukinotou.abstraction.dataframe_exportable import DataframeExportable
@@ -22,7 +21,7 @@ class _SampleRow:
 
 class TestDataframeExportable:
     @pytest.fixture
-    def sample_data(self) -> List[_SampleRow]:
+    def sample_data(self) -> list[_SampleRow]:
         """Create sample test data."""
         return [
             _SampleRow(_SampleModel(id=1, name="Item 1"), Path("/path/to/file1.txt")),

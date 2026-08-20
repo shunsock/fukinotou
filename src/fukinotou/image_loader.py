@@ -1,8 +1,7 @@
 from pathlib import Path
-from typing import List
 
-from pydantic import BaseModel, ConfigDict
 from PIL import Image
+from pydantic import BaseModel, ConfigDict
 
 from .exception.loading_exception import LoadingException
 from .path_handler.path_searcher import PathSearcher
@@ -33,7 +32,7 @@ class ImagesLoaded(BaseModel):
     """
 
     path: Path
-    value: List[ImageLoaded]
+    value: list[ImageLoaded]
 
 
 class ImageLoader:
@@ -77,7 +76,7 @@ class ImagesLoader:
     """
 
     @staticmethod
-    def load(path: str | Path, extensions: List[str]) -> ImagesLoaded:
+    def load(path: str | Path, extensions: list[str]) -> ImagesLoaded:
         """
         Load all image files in the directory.
 
@@ -91,13 +90,13 @@ class ImagesLoader:
                 error_message=f"Input path is invalid: {p}",
             )
 
-        image_file_paths: List[Path] = (
+        image_file_paths: list[Path] = (
             PathSearcher.search_specific_extensions_paths_from_directory_path(
                 path=p, extensions=extensions
             )
         )
 
-        results: List[ImageLoaded] = [
+        results: list[ImageLoaded] = [
             ImageLoader().load(image_file) for image_file in image_file_paths
         ]
         return ImagesLoaded(

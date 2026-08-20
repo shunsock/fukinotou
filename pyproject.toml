@@ -40,3 +40,6 @@ dev = [
 
 [tool.hatch.build]
 packages = ["src/fukinotou"]
+
+[tool.ruff.lint]
+ignore = ["BLE001"]

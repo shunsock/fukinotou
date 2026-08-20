@@ -1,6 +1,7 @@
-from pathlib import Path
-from typing import List, Type, TypeVar, Generic
 import json
+from pathlib import Path
+from typing import Generic, TypeVar
+
 from pydantic import BaseModel, ValidationError
 
 from fukinotou.abstraction.dataframe_exportable import DataframeExportable
@@ -23,8 +24,8 @@ class JsonlRow(BaseModel, Generic[T]):
 
 class JsonlLoaded(
     BaseModel,
-    Generic[T],
     DataframeExportable[JsonlRow[T]],
+    Generic[T],
 ):
     """Model representing the result of loading an entire JSONL file.
 
@@ -34,7 +35,7 @@ class JsonlLoaded(
     """
 
     path: Path
-    value: List[JsonlRow[T]]
+    value: list[JsonlRow[T]]
 
 
 class JsonlLoader(Generic[T]):
@@ -47,7 +48,7 @@ class JsonlLoader(Generic[T]):
         T: A Pydantic BaseModel subclass that defines the schema for JSONL rows
     """
 
-    def __init__(self, model: Type[T]) -> None:
+    def __init__(self, model: type[T]) -> None:
         """Initialize the JSONL loader with a target model class.
 
         Args:
@@ -78,16 +79,14 @@ class JsonlLoader(Generic[T]):
         if not p.is_file():
             raise LoadingException(f"Input path is invalid: {p}")
 
-        jsonl_rows: List[JsonlRow[T]] = []
+        jsonl_rows: list[JsonlRow[T]] = []
         with p.open(encoding=encoding) as jsonl_file:
             try:
                 for line, content in enumerate(jsonl_file, start=1):
-                    # remove space outside of contents
                     c = content.strip()
                     if not c:
-                        continue  # skip empty lines
+                        continue
 
-                    # Validation
                     parsed = self._validate_json_string_as_model(
                         content=c,
                         line=line,
