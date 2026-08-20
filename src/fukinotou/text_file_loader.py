@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 
 from pydantic import BaseModel
 
@@ -30,7 +29,7 @@ class TextFilesLoaded(BaseModel):
     """
 
     path: Path
-    value: List[TextFileLoaded]
+    value: list[TextFileLoaded]
 
 
 class TextFileLoader:
@@ -88,7 +87,7 @@ class TextFilesLoader:
                 error_message=f"Input path is invalid: {path}",
             )
 
-        text_files: List[Path] = (
+        text_files: list[Path] = (
             PathSearcher.search_specific_extension_paths_from_directory_path(
                 path=p,
                 extension=".txt",
@@ -97,7 +96,7 @@ class TextFilesLoader:
 
         # propagate LoadingError
         loader = TextFileLoader()
-        results: List[TextFileLoaded] = [
+        results: list[TextFileLoaded] = [
             loader.load(text_file, encoding) for text_file in text_files
         ]
 

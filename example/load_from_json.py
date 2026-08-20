@@ -1,5 +1,6 @@
-from fukinotou import JsonLoader, JsonLoaded, JsonsLoader, JsonsLoaded, LoadingException
 from pydantic import BaseModel
+
+from fukinotou import JsonLoaded, JsonLoader, JsonsLoaded, JsonsLoader, LoadingException
 
 
 class User(BaseModel):

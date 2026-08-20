@@ -1,5 +1,6 @@
-from fukinotou import CsvLoaded, CsvLoader, LoadingException
 from pydantic import BaseModel
+
+from fukinotou import CsvLoaded, CsvLoader, LoadingException
 
 
 class User(BaseModel):

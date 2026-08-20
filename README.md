@@ -36,9 +36,9 @@ process. This is an example of reading logfiles under "./".
 from fukinotou import JsonsLoader, JsonsLoaded
 
 logfiles: JsonsLoaded[LogFileFormat] = JsonsLoader(LogfileFormat).load("./")
-print(logfiles.path) # show directory path
-print(logfiles.value[1].value.path) # show i-th log file path (not directory)
-print(logfiles.value[1].value.value) # show i-th log file value
+print(logfiles.path)  # show directory path
+print(logfiles.value[1].value.path)  # show i-th log file path (not directory)
+print(logfiles.value[1].value.value)  # show i-th log file value
 ```
 
 ### Export to Dataframe
@@ -52,6 +52,7 @@ formats.
 ```python
 from fukinotou import JsonLoader, JsonsLoaded
 import polars
+
 users: JsonsLoaded[Visitor] = JsonLoader(Visitor).load("./path_to_dir")
 polars_df: polars.DataFrame = users.to_polars(include_path_as_column=False)
 ```
@@ -103,19 +104,19 @@ import pandas
 
 
 class User(BaseModel):
-   id: int
-   name: str
-   age: int
+    id: int
+    name: str
+    age: int
 
 
 try:
-   users: CsvLoaded[User] = CsvLoader(User).load("./users.csv")
-   polars_df: polars.DataFrame = users.to_polars(include_path_as_column=False)
-   print(polars_df)
-   pandas_df: pandas.DataFrame = users.to_pandas(include_path_as_column=True)
-   print(pandas_df)
+    users: CsvLoaded[User] = CsvLoader(User).load("./users.csv")
+    polars_df: polars.DataFrame = users.to_polars(include_path_as_column=False)
+    print(polars_df)
+    pandas_df: pandas.DataFrame = users.to_pandas(include_path_as_column=True)
+    print(pandas_df)
 except LoadingException as e:
-   print(f"Failed to load: {e}")
+    print(f"Failed to load: {e}")
 ```
 
 This is output of the above code:

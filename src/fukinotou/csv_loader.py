@@ -1,11 +1,12 @@
 import csv
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Dict, List, Type, TypeVar, Generic, Iterator
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
-from .exception.loading_exception import LoadingException
 from .abstraction.dataframe_exportable import DataframeExportable
+from .exception.loading_exception import LoadingException
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -24,8 +25,8 @@ class CsvRow(BaseModel, Generic[T]):
 
 class CsvLoaded(
     BaseModel,
-    Generic[T],
     DataframeExportable[CsvRow[T]],
+    Generic[T],
 ):
     """Model representing the result of loading an entire CSV file.
 
@@ -35,7 +36,7 @@ class CsvLoaded(
     """
 
     path: Path
-    value: List[CsvRow[T]]
+    value: list[CsvRow[T]]
 
 
 class CsvLoader(Generic[T]):
@@ -48,7 +49,7 @@ class CsvLoader(Generic[T]):
         T: A Pydantic BaseModel subclass that defines the schema for CSV rows
     """
 
-    def __init__(self, model: Type[T]) -> None:
+    def __init__(self, model: type[T]) -> None:
         """Initialize the CSV loader with a target model class.
 
         Args:
@@ -91,9 +92,9 @@ class CsvLoader(Generic[T]):
             )
 
     @staticmethod
-    def _read_csv_headers(reader: Iterator[List[str]], path: Path) -> List[str]:
+    def _read_csv_headers(reader: Iterator[list[str]], path: Path) -> list[str]:
         try:
-            headers: List[str] = next(reader)
+            headers: list[str] = next(reader)
             return headers
         except StopIteration:
             raise LoadingException(
@@ -101,18 +102,15 @@ class CsvLoader(Generic[T]):
             )
 
     def _validate_csv_row(
-        self, reader: Iterator[List[str]], headers: List[str], path: Path
-    ) -> List[CsvRow[T]]:
-        csv_rows: List[CsvRow[T]] = []
-        # Validation foreach rows
+        self, reader: Iterator[list[str]], headers: list[str], path: Path
+    ) -> list[CsvRow[T]]:
+        csv_rows: list[CsvRow[T]] = []
         for row_number, row_data in enumerate(reader, start=2):
-            row_data_typed: List[str] = row_data
-            # Skip empty lines
+            row_data_typed: list[str] = row_data
             if not any(cell.strip() for cell in row_data_typed):
                 continue
 
-            # Validation
-            row_dict: Dict[str, str] = {}
+            row_dict: dict[str, str] = {}
             for i, header in enumerate(headers):
                 if i < len(row_data_typed):
                     row_dict[header] = row_data_typed[i]

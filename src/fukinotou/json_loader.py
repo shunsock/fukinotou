@@ -1,7 +1,6 @@
-from pathlib import Path
-from typing import List, Type, TypeVar, Generic
-
 import json
+from pathlib import Path
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
@@ -34,7 +33,7 @@ class JsonsLoaded(BaseModel, DataframeExportable[JsonLoaded[T]], Generic[T]):
     """
 
     path: Path
-    value: List[JsonLoaded[T]]
+    value: list[JsonLoaded[T]]
 
 
 class JsonLoader(Generic[T]):
@@ -48,7 +47,7 @@ class JsonLoader(Generic[T]):
         T: A Pydantic BaseModel subclass that defines the schema for JSON content
     """
 
-    def __init__(self, model: Type[T]) -> None:
+    def __init__(self, model: type[T]) -> None:
         """Initialize the JSON loader with a target model class.
 
         Args:
@@ -106,7 +105,7 @@ class JsonsLoader(Generic[T]):
         T: A Pydantic BaseModel subclass that defines the schema for JSON content
     """
 
-    def __init__(self, model: Type[T]) -> None:
+    def __init__(self, model: type[T]) -> None:
         """Initialize the JSONs loader with a target model class.
 
         Args:
@@ -137,7 +136,7 @@ class JsonsLoader(Generic[T]):
                 error_message=f"Input path is not directory: {d}",
             )
 
-        json_files: List[Path] = (
+        json_files: list[Path] = (
             PathSearcher.search_specific_extension_paths_from_directory_path(
                 path=d,
                 extension=".json",
@@ -146,7 +145,7 @@ class JsonsLoader(Generic[T]):
 
         # Raise Error if we found any invalid rows
         loader = JsonLoader(model=self.model)
-        results: List[JsonLoaded[T]] = [
+        results: list[JsonLoaded[T]] = [
             loader.load(json_file) for json_file in json_files
         ]
 
